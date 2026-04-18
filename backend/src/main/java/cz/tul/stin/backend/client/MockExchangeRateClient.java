@@ -4,11 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cz.tul.stin.backend.model.dto.LatestRatesResponse;
 import cz.tul.stin.backend.model.dto.TimeseriesResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 
 @Component
+@Profile("dev")
 public class MockExchangeRateClient implements ExchangeRateClient {
 
     private final ObjectMapper objectMapper;
