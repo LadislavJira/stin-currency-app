@@ -1,0 +1,23 @@
+# === OS a IDE ===
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/
+
+# === Backend (Java / Maven) ===
+target/
+*.jar
+*.war
+!maven-wrapper.jar
+logs/
+*.log
+
+# === Frontend (React / Node / Vite) ===
+node_modules/
+dist/
+dist-ssr/
+.env
+.env.local
+.env.*.local
+npm-debug.log*
