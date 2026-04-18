@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "timestamp": 1700000000,
+  "base": "EUR",
+  "date": "2025-01-01",
+  "rates": {
+    "USD": 1.08,
+    "CZK": 24.5,
+    "GBP": 0.85
+  }
+}

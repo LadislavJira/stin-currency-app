@@ -6,7 +6,7 @@ import lombok.Getter;
 public enum CurrencySymbol {
     AUD, CAD, CHF, CNY, DKK, EUR, GBP, HKD, HUF, ILS,
     JPY, KRW, MXN, NOK, NZD, PLN, RON, SEK, SGD, THB,
-    TRY, USD, ZAR, CZK; // CZK přidáváme jako základní měnu
+    TRY, USD, ZAR, CZK;
 
     public static boolean isValid(String code) {
         if (code == null) return false;
