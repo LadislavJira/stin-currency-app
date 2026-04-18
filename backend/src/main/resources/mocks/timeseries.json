@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "timeseries": true,
+  "base": "EUR",
+  "start_date": "2025-01-01",
+  "end_date": "2025-01-03",
+  "rates": {
+    "2025-01-01": {
+      "USD": 1.08,
+      "CZK": 24.5
+    },
+    "2025-01-02": {
+      "USD": 1.07,
+      "CZK": 24.4
+    }
+  }
+}
