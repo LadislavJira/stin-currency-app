@@ -2,11 +2,14 @@ package cz.tul.stin.backend.service;
 
 import cz.tul.stin.backend.client.ExchangeRateClient;
 import cz.tul.stin.backend.model.CurrencySymbol;
+import cz.tul.stin.backend.model.ExchangeRate;
 import cz.tul.stin.backend.model.dto.LatestRatesResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -14,21 +17,28 @@ import java.util.Map;
 public class CurrencyService {
     private final ExchangeRateClient exchangeRateClient;
 
-    public Map<String, Double> getFilteredLatestRates(String baseCurrency) {
+    public List<ExchangeRate> getFilteredLatestRates(String baseCurrency) {
         LatestRatesResponse response = exchangeRateClient.getLatestRates(baseCurrency, "");
 
         if (response == null || !response.isSuccess() || response.getRates() == null) {
             throw new RuntimeException("Nepodařilo se získat data z API");
         }
 
-        Map<String, Double> filteredRates = new HashMap<>();
+        List<ExchangeRate> domainRates = new ArrayList<>();
 
         for (Map.Entry<String, Double> entry : response.getRates().entrySet()) {
-            if (CurrencySymbol.isValid(entry.getKey())) {
-                filteredRates.put(entry.getKey(), entry.getValue());
+            String currency = entry.getKey();
+            Double rate = entry.getValue();
+
+            if (rate != null && CurrencySymbol.isValid(currency)) {
+                ExchangeRate exchangeRate = new ExchangeRate();
+                exchangeRate.setCurrency(currency);
+                exchangeRate.setRate(rate);
+
+                domainRates.add(exchangeRate);
             }
         }
 
-        return filteredRates;
+        return domainRates;
     }
 }
