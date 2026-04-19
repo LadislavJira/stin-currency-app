@@ -1,6 +1,7 @@
 package cz.tul.stin.backend.service;
 
 import cz.tul.stin.backend.client.ExchangeRateClient;
+import cz.tul.stin.backend.model.ExchangeRate;
 import cz.tul.stin.backend.model.dto.LatestRatesResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,6 +11,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,6 +31,7 @@ class CurrencyServiceTest {
         mockRates.put("CZK", 25.0);
         mockRates.put("USD", 1.1);
         mockRates.put("XYZ", 100.0);
+        mockRates.put("GBP", null);
 
         LatestRatesResponse mockResponse = new LatestRatesResponse();
         mockResponse.setSuccess(true);
@@ -37,13 +40,22 @@ class CurrencyServiceTest {
         Mockito.when(exchangeRateClient.getLatestRates("EUR", ""))
                 .thenReturn(mockResponse);
 
-        Map<String, Double> result = currencyService.getFilteredLatestRates("EUR");
+        List<ExchangeRate> result = currencyService.getFilteredLatestRates("EUR");
 
         assertNotNull(result);
-        assertEquals(2, result.size(), "Mapa by měla obsahovat pouze 2 platné měny");
-        assertTrue(result.containsKey("CZK"));
-        assertTrue(result.containsKey("USD"));
-        assertFalse(result.containsKey("XYZ"), "Neplatná měna musí být odstraněna");
+        assertEquals(2, result.size(), "List by měl obsahovat pouze 2 platné a nenulové měny");
+
+        List<String> resultCurrencies = result.stream()
+                .map(ExchangeRate::getCurrency)
+                .toList();
+
+        assertTrue(resultCurrencies.contains("CZK"));
+        assertTrue(resultCurrencies.contains("USD"));
+        assertFalse(resultCurrencies.contains("XYZ"), "Neplatná měna musí být odstraněna");
+        assertFalse(resultCurrencies.contains("GBP"), "Měna s null hodnotou musí být odstraněna");
+
+        ExchangeRate czkRate = result.stream().filter(r -> r.getCurrency().equals("CZK")).findFirst().get();
+        assertEquals(25.0, czkRate.getRate());
     }
 
     @Test

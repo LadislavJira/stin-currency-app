@@ -1,5 +1,6 @@
 package cz.tul.stin.backend.controller;
 
+import cz.tul.stin.backend.model.ExchangeRate;
 import cz.tul.stin.backend.model.dto.ExtremesResult;
 import cz.tul.stin.backend.service.CurrencyService;
 import cz.tul.stin.backend.service.StatisticsService;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -21,10 +23,10 @@ public class CurrencyController {
     private final StatisticsService statisticsService;
 
     @GetMapping("/latest")
-    public ResponseEntity<Map<String, Double>> getLatestRates(
+    public ResponseEntity<List<ExchangeRate>> getLatestRates(
             @RequestParam(defaultValue = "EUR") String base) {
 
-        Map<String, Double> rates = currencyService.getFilteredLatestRates(base);
+        List<ExchangeRate> rates = currencyService.getFilteredLatestRates(base);
         return ResponseEntity.ok(rates);
     }
 
