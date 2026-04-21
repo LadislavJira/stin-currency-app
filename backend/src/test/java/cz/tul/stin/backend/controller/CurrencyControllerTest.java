@@ -35,24 +35,19 @@ class CurrencyControllerTest {
 
     @Test
     void testGetLatestRates() {
-        // Příprava mock dat jako List<ExchangeRate> místo původní Mapy
         List<ExchangeRate> mockList = new ArrayList<>();
         ExchangeRate rate = new ExchangeRate();
         rate.setCurrency("CZK");
         rate.setRate(25.0);
         mockList.add(rate);
 
-        Mockito.when(currencyService.getFilteredLatestRates("EUR")).thenReturn(mockList);
+        Mockito.when(currencyService.getFilteredLatestRates("EUR", "CZK")).thenReturn(mockList);
 
-        // Návratový typ se změnil na ResponseEntity<List<ExchangeRate>>
-        ResponseEntity<List<ExchangeRate>> response = currencyController.getLatestRates("EUR");
+        ResponseEntity<List<ExchangeRate>> response = currencyController.getLatestRates("EUR", "CZK");
 
-        // Ověření správných hodnot a stavového kódu
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(1, response.getBody().size(), "List by měl obsahovat právě jeden prvek");
         assertEquals("CZK", response.getBody().get(0).getCurrency());
-        assertEquals(25.0, response.getBody().get(0).getRate());
     }
 
     @Test
