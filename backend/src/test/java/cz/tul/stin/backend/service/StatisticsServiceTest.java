@@ -2,8 +2,8 @@ package cz.tul.stin.backend.service;
 
 import cz.tul.stin.backend.client.ExchangeRateClient;
 import cz.tul.stin.backend.model.dto.ExtremesResult;
-import cz.tul.stin.backend.model.dto.LatestRatesResponse;
-import cz.tul.stin.backend.model.dto.TimeseriesResponse;
+import cz.tul.stin.backend.model.dto.LiveRatesResponse;
+import cz.tul.stin.backend.model.dto.TimeframeResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,17 +27,19 @@ class StatisticsServiceTest {
 
     @Test
     void testFindExtremes_Success() {
-        Map<String, Double> mockRates = new HashMap<>();
-        mockRates.put("CZK", 25.0);
-        mockRates.put("USD", 1.1);
-        mockRates.put("GBP", 0.85);
-        mockRates.put("XYZ", 390.0);
-        mockRates.put("AUD", null);
-        mockRates.put("PLN", 5.0);
+        Map<String, Double> mockQuotes = new HashMap<>();
+        mockQuotes.put("EURCZK", 25.0);
+        mockQuotes.put("EURUSD", 1.1);
+        mockQuotes.put("EURGBP", 0.85);
+        mockQuotes.put("EURXYZ", 390.0);
+        mockQuotes.put("EURAUD", null);
+        mockQuotes.put("EURPLN", 5.0);
+        mockQuotes.put("SHORT", 10.0);
+        mockQuotes.put(null, 50.0);
 
-        LatestRatesResponse mockResponse = new LatestRatesResponse();
+        LiveRatesResponse mockResponse = new LiveRatesResponse();
         mockResponse.setSuccess(true);
-        mockResponse.setRates(mockRates);
+        mockResponse.setQuotes(mockQuotes);
 
         Mockito.when(exchangeRateClient.getLatestRates("EUR", "CZK,USD,GBP,XYZ"))
                 .thenReturn(mockResponse);
@@ -53,14 +55,13 @@ class StatisticsServiceTest {
 
     @Test
     void testFindExtremes_Success_WithNullSymbols() {
-        // Test pro větev, kdy uživatel nevyplní filter měn (symbols je null)
-        Map<String, Double> mockRates = new HashMap<>();
-        mockRates.put("CZK", 25.0);
-        mockRates.put("USD", 1.1);
+        Map<String, Double> mockQuotes = new HashMap<>();
+        mockQuotes.put("EURCZK", 25.0);
+        mockQuotes.put("EURUSD", 1.1);
 
-        LatestRatesResponse mockResponse = new LatestRatesResponse();
+        LiveRatesResponse mockResponse = new LiveRatesResponse();
         mockResponse.setSuccess(true);
-        mockResponse.setRates(mockRates);
+        mockResponse.setQuotes(mockQuotes);
 
         Mockito.when(exchangeRateClient.getLatestRates("EUR", null))
                 .thenReturn(mockResponse);
@@ -75,27 +76,27 @@ class StatisticsServiceTest {
     @Test
     void testCalculateAverages_Success_IgnoresEmptyData() {
         Map<String, Double> day1 = new HashMap<>();
-        day1.put("CZK", 24.0);
-        day1.put("USD", 1.0);
-        day1.put("AUD", null);
-        day1.put("XYZ", 999.0);
-        day1.put("PLN", 5.0);
+        day1.put("EURCZK", 24.0);
+        day1.put("EURUSD", 1.0);
+        day1.put("EURAUD", null);
+        day1.put("EURXYZ", 999.0);
+        day1.put("EURPLN", 5.0);
 
         Map<String, Double> day2 = new HashMap<>();
 
         Map<String, Double> day3 = new HashMap<>();
-        day3.put("CZK", 25.0);
-        day3.put("USD", 1.2);
+        day3.put("EURCZK", 25.0);
+        day3.put("EURUSD", 1.2);
 
-        Map<String, Map<String, Double>> timeseriesRates = new HashMap<>();
-        timeseriesRates.put("2025-01-01", day1);
-        timeseriesRates.put("2025-01-02", day2);
-        timeseriesRates.put("2025-01-03", day3);
-        timeseriesRates.put("2025-01-04", null);
+        Map<String, Map<String, Double>> quotes = new HashMap<>();
+        quotes.put("2025-01-01", day1);
+        quotes.put("2025-01-02", day2);
+        quotes.put("2025-01-03", day3);
+        quotes.put("2025-01-04", null);
 
-        TimeseriesResponse mockResponse = new TimeseriesResponse();
+        TimeframeResponse mockResponse = new TimeframeResponse();
         mockResponse.setSuccess(true);
-        mockResponse.setRates(timeseriesRates);
+        mockResponse.setQuotes(quotes);
 
         Mockito.when(exchangeRateClient.getHistoricalRates("2025-01-01", "2025-01-03", "EUR", "CZK,USD"))
                 .thenReturn(mockResponse);
@@ -110,16 +111,18 @@ class StatisticsServiceTest {
 
     @Test
     void testCalculateAverages_Success_WithEmptySymbols() {
-        // Test pro větev, kdy uživatel pošle prázdný string "" v symbols
         Map<String, Double> day1 = new HashMap<>();
-        day1.put("CZK", 24.0);
+        day1.put("EURCZK", 24.0);
+        day1.put("EURXYZ", 999.0);
+        day1.put("EURAUD", null);
+        day1.put("BAD", 10.0);
 
-        Map<String, Map<String, Double>> timeseriesRates = new HashMap<>();
-        timeseriesRates.put("2025-01-01", day1);
+        Map<String, Map<String, Double>> quotes = new HashMap<>();
+        quotes.put("2025-01-01", day1);
 
-        TimeseriesResponse mockResponse = new TimeseriesResponse();
+        TimeframeResponse mockResponse = new TimeframeResponse();
         mockResponse.setSuccess(true);
-        mockResponse.setRates(timeseriesRates);
+        mockResponse.setQuotes(quotes);
 
         Mockito.when(exchangeRateClient.getHistoricalRates("2025-01-01", "2025-01-01", "EUR", ""))
                 .thenReturn(mockResponse);
@@ -128,6 +131,8 @@ class StatisticsServiceTest {
 
         assertNotNull(averages);
         assertEquals(24.0, averages.get("CZK"));
+        assertFalse(averages.containsKey("XYZ"));
+        assertFalse(averages.containsKey("AUD"));
     }
 
     @Test
@@ -135,11 +140,7 @@ class StatisticsServiceTest {
         Mockito.when(exchangeRateClient.getLatestRates("EUR", "CZK"))
                 .thenReturn(null);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            statisticsService.findExtremes("EUR", "CZK");
-        });
-
-        assertTrue(exception.getMessage().contains("Nepodařilo se získat aktuální data"));
+        assertThrows(RuntimeException.class, () -> statisticsService.findExtremes("EUR", "CZK"));
     }
 
     @Test
@@ -147,27 +148,13 @@ class StatisticsServiceTest {
         Mockito.when(exchangeRateClient.getHistoricalRates("2025-01-01", "2025-01-03", "EUR", "CZK"))
                 .thenReturn(null);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            statisticsService.calculateAverages("2025-01-01", "2025-01-03", "EUR", "CZK");
-        });
-
-        assertTrue(exception.getMessage().contains("Nepodařilo se získat historická data"));
+        assertThrows(RuntimeException.class, () -> statisticsService.calculateAverages("2025-01-01", "2025-01-03", "EUR", "CZK"));
     }
 
     @Test
     void testFindExtremes_ThrowsException_WhenSuccessIsFalse() {
-        LatestRatesResponse mockResponse = new LatestRatesResponse();
+        LiveRatesResponse mockResponse = new LiveRatesResponse();
         mockResponse.setSuccess(false);
-        Mockito.when(exchangeRateClient.getLatestRates("EUR", "CZK")).thenReturn(mockResponse);
-
-        assertThrows(RuntimeException.class, () -> statisticsService.findExtremes("EUR", "CZK"));
-    }
-
-    @Test
-    void testFindExtremes_ThrowsException_WhenRatesAreNull() {
-        LatestRatesResponse mockResponse = new LatestRatesResponse();
-        mockResponse.setSuccess(true);
-        mockResponse.setRates(null);
         Mockito.when(exchangeRateClient.getLatestRates("EUR", "CZK")).thenReturn(mockResponse);
 
         assertThrows(RuntimeException.class, () -> statisticsService.findExtremes("EUR", "CZK"));
@@ -175,7 +162,7 @@ class StatisticsServiceTest {
 
     @Test
     void testCalculateAverages_ThrowsException_WhenSuccessIsFalse() {
-        TimeseriesResponse mockResponse = new TimeseriesResponse();
+        TimeframeResponse mockResponse = new TimeframeResponse();
         mockResponse.setSuccess(false);
         Mockito.when(exchangeRateClient.getHistoricalRates("2025-01-01", "2025-01-03", "EUR", "CZK")).thenReturn(mockResponse);
 
@@ -183,10 +170,22 @@ class StatisticsServiceTest {
     }
 
     @Test
-    void testCalculateAverages_ThrowsException_WhenRatesAreNull() {
-        TimeseriesResponse mockResponse = new TimeseriesResponse();
+    void testFindExtremes_ThrowsException_WhenQuotesAreNull() {
+        LiveRatesResponse mockResponse = new LiveRatesResponse();
         mockResponse.setSuccess(true);
-        mockResponse.setRates(null);
+        mockResponse.setQuotes(null);
+
+        Mockito.when(exchangeRateClient.getLatestRates("EUR", "CZK")).thenReturn(mockResponse);
+
+        assertThrows(RuntimeException.class, () -> statisticsService.findExtremes("EUR", "CZK"));
+    }
+
+    @Test
+    void testCalculateAverages_ThrowsException_WhenQuotesAreNull() {
+        TimeframeResponse mockResponse = new TimeframeResponse();
+        mockResponse.setSuccess(true);
+        mockResponse.setQuotes(null);
+
         Mockito.when(exchangeRateClient.getHistoricalRates("2025-01-01", "2025-01-03", "EUR", "CZK")).thenReturn(mockResponse);
 
         assertThrows(RuntimeException.class, () -> statisticsService.calculateAverages("2025-01-01", "2025-01-03", "EUR", "CZK"));

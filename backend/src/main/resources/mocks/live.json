@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "terms": "https://currencylayer.com/terms",
+  "privacy": "https://currencylayer.com/privacy",
+  "timestamp": 1776626706,
+  "source": "EUR",
+  "quotes": {
+    "EURCZK": 24.300272,
+    "EURUSD": 1.174817,
+    "EURGBP": 0.869784,
+    "EURAUD": 1.642157,
+    "EURPLN": 4.224954
+  }
+}

@@ -24,9 +24,10 @@ public class CurrencyController {
 
     @GetMapping("/latest")
     public ResponseEntity<List<ExchangeRate>> getLatestRates(
-            @RequestParam(defaultValue = "EUR") String base) {
+            @RequestParam(defaultValue = "EUR") String base,
+            @RequestParam String symbols) {
 
-        List<ExchangeRate> rates = currencyService.getFilteredLatestRates(base);
+        List<ExchangeRate> rates = currencyService.getFilteredLatestRates(base, symbols);
         return ResponseEntity.ok(rates);
     }
 

@@ -4,8 +4,8 @@ import cz.tul.stin.backend.client.ExchangeRateClient;
 import cz.tul.stin.backend.model.CurrencySymbol;
 import cz.tul.stin.backend.model.ExchangeRate;
 import cz.tul.stin.backend.model.dto.ExtremesResult;
-import cz.tul.stin.backend.model.dto.LatestRatesResponse;
-import cz.tul.stin.backend.model.dto.TimeseriesResponse;
+import cz.tul.stin.backend.model.dto.LiveRatesResponse;
+import cz.tul.stin.backend.model.dto.TimeframeResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,9 +24,9 @@ public class StatisticsService {
 
     public ExtremesResult findExtremes(String base, String symbols) {
 
-        LatestRatesResponse response = exchangeRateClient.getLatestRates(base, symbols);
+        LiveRatesResponse response = exchangeRateClient.getLatestRates(base, symbols);
 
-        if (response == null || !response.isSuccess() || response.getRates() == null) {
+        if (response == null || !response.isSuccess() || response.getQuotes() == null) {
             throw new RuntimeException("Nepodařilo se získat aktuální data");
         }
 
@@ -57,14 +57,14 @@ public class StatisticsService {
 
     public Map<String, Double> calculateAverages(String startDate, String endDate, String base, String symbols) {
 
-        TimeseriesResponse response = exchangeRateClient.getHistoricalRates(startDate, endDate, base, symbols);
+        TimeframeResponse response = exchangeRateClient.getHistoricalRates(startDate, endDate, base, symbols);
 
-        if (response == null || !response.isSuccess() || response.getRates() == null) {
+        if (response == null || !response.isSuccess() || response.getQuotes() == null) {
             throw new RuntimeException("Nepodařilo se získat historická data");
         }
 
         List<String> requestedSymbols = parseSymbols(symbols);
-        List<ExchangeRate> domainRates = mapTimeseriesToDomain(response, requestedSymbols);
+        List<ExchangeRate> domainRates = mapTimeframeToDomain(response, requestedSymbols);
 
         Map<String, Double> sums = new HashMap<>();
         Map<String, Integer> counts = new HashMap<>();
@@ -93,10 +93,10 @@ public class StatisticsService {
         return java.util.Arrays.asList(symbols.split(","));
     }
 
-    private List<ExchangeRate> mapTimeseriesToDomain(TimeseriesResponse dto, List<String> requestedSymbols) {
+    private List<ExchangeRate> mapTimeframeToDomain(TimeframeResponse dto, List<String> requestedSymbols) {
         List<ExchangeRate> domainList = new ArrayList<>();
 
-        for (var dateEntry : dto.getRates().entrySet()) {
+        for (var dateEntry : dto.getQuotes().entrySet()) {
             String date = dateEntry.getKey();
             Map<String, Double> dailyRates = dateEntry.getValue();
 
@@ -113,10 +113,10 @@ public class StatisticsService {
         return domainList;
     }
 
-    private List<ExchangeRate> mapLatestToDomain(LatestRatesResponse dto, List<String> requestedSymbols) {
+    private List<ExchangeRate> mapLatestToDomain(LiveRatesResponse dto, List<String> requestedSymbols) {
         List<ExchangeRate> domainList = new ArrayList<>();
 
-        for (Map.Entry<String, Double> entry : dto.getRates().entrySet()) {
+        for (Map.Entry<String, Double> entry : dto.getQuotes().entrySet()) {
             ExchangeRate rate = createRateIfValid(entry.getKey(), entry.getValue(), null, requestedSymbols);
 
             if (rate != null) {
@@ -126,16 +126,22 @@ public class StatisticsService {
         return domainList;
     }
 
-    private ExchangeRate createRateIfValid(String currency, Double value, String date, List<String> requestedSymbols) {
-        if (value == null || !CurrencySymbol.isValid(currency)) {
+    private ExchangeRate createRateIfValid(String currencyPair, Double value, String date, List<String> requestedSymbols) {
+        if (currencyPair == null || currencyPair.length() != 6) {
             return null;
         }
-        if (requestedSymbols != null && !requestedSymbols.contains(currency)) {
+        String targetCurrency = currencyPair.substring(3);
+
+        if (value == null || !CurrencySymbol.isValid(targetCurrency)) {
+            return null;
+        }
+
+        if (requestedSymbols != null && !requestedSymbols.contains(targetCurrency)) {
             return null;
         }
 
         ExchangeRate rate = new ExchangeRate();
-        rate.setCurrency(currency);
+        rate.setCurrency(targetCurrency);
         rate.setRate(value);
         rate.setDate(date);
 

@@ -1,8 +1,8 @@
 package cz.tul.stin.backend.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cz.tul.stin.backend.model.dto.LatestRatesResponse;
-import cz.tul.stin.backend.model.dto.TimeseriesResponse;
+import cz.tul.stin.backend.model.dto.LiveRatesResponse;
+import cz.tul.stin.backend.model.dto.TimeframeResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -21,19 +21,19 @@ public class MockExchangeRateClient implements ExchangeRateClient {
     }
 
     @Override
-    public LatestRatesResponse getLatestRates(String base, String symbols) {
+    public LiveRatesResponse getLatestRates(String base, String symbols) {
         try {
-            InputStream is = getClass().getResourceAsStream("/mocks/latest.json");
-            return objectMapper.readValue(is, LatestRatesResponse.class);
+            InputStream is = getClass().getResourceAsStream("/mocks/live.json");
+            return objectMapper.readValue(is, LiveRatesResponse.class);
         } catch (Exception e) {
             throw new RuntimeException("Chyba při načítání mock dat pro aktuální kurzy", e);
         }
     }
     @Override
-    public TimeseriesResponse getHistoricalRates(String startDate, String endDate, String base, String symbols) {
+    public TimeframeResponse getHistoricalRates(String startDate, String endDate, String base, String symbols) {
         try {
-            InputStream is = getClass().getResourceAsStream("/mocks/timeseries.json");
-            return objectMapper.readValue(is, TimeseriesResponse.class);
+            InputStream is = getClass().getResourceAsStream("/mocks/timeframe.json");
+            return objectMapper.readValue(is, TimeframeResponse.class);
         } catch (Exception e) {
             throw new RuntimeException("Chyba při načítání mock dat pro historii ", e);
         }
