@@ -1,6 +1,7 @@
 package cz.tul.stin.backend.service;
 
 import cz.tul.stin.backend.client.ExchangeRateClient;
+import cz.tul.stin.backend.exception.ExternalApiException;
 import cz.tul.stin.backend.model.ExchangeRate;
 import cz.tul.stin.backend.model.dto.LiveRatesResponse;
 import org.junit.jupiter.api.Test;
@@ -68,11 +69,11 @@ class CurrencyServiceTest {
         Mockito.when(exchangeRateClient.getLatestRates("EUR", ""))
                 .thenReturn(null);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+        ExternalApiException exception = assertThrows(ExternalApiException.class, () -> {
             currencyService.getFilteredLatestRates("EUR", "");
         });
 
-        assertTrue(exception.getMessage().contains("Nepodařilo se získat data"));
+        assertTrue(exception.getMessage().contains("aktuální kurzy z burzy"));
     }
 
     @Test
@@ -83,7 +84,7 @@ class CurrencyServiceTest {
         Mockito.when(exchangeRateClient.getLatestRates("EUR", ""))
                 .thenReturn(mockResponse);
 
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(ExternalApiException.class, () -> {
             currencyService.getFilteredLatestRates("EUR", "");
         });
     }
@@ -92,12 +93,12 @@ class CurrencyServiceTest {
     void testGetFilteredLatestRates_ThrowsException_WhenQuotesAreNull() {
         LiveRatesResponse mockResponse = new LiveRatesResponse();
         mockResponse.setSuccess(true);
-        mockResponse.setQuotes(null); // Změněno z setRates na setQuotes
+        mockResponse.setQuotes(null);
 
         Mockito.when(exchangeRateClient.getLatestRates("EUR", ""))
                 .thenReturn(mockResponse);
 
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(ExternalApiException.class, () -> {
             currencyService.getFilteredLatestRates("EUR", "");
         });
     }

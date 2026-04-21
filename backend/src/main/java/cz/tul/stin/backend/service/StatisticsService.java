@@ -1,6 +1,7 @@
 package cz.tul.stin.backend.service;
 
 import cz.tul.stin.backend.client.ExchangeRateClient;
+import cz.tul.stin.backend.exception.ExternalApiException;
 import cz.tul.stin.backend.model.CurrencySymbol;
 import cz.tul.stin.backend.model.ExchangeRate;
 import cz.tul.stin.backend.model.dto.ExtremesResult;
@@ -27,7 +28,7 @@ public class StatisticsService {
         LiveRatesResponse response = exchangeRateClient.getLatestRates(base, symbols);
 
         if (response == null || !response.isSuccess() || response.getQuotes() == null) {
-            throw new RuntimeException("Nepodařilo se získat aktuální data");
+            throw new ExternalApiException("Nepodařilo se získat data pro výpočet extrémů.");
         }
 
         List<String> requestedSymbols = parseSymbols(symbols);
@@ -60,7 +61,7 @@ public class StatisticsService {
         TimeframeResponse response = exchangeRateClient.getHistoricalRates(startDate, endDate, base, symbols);
 
         if (response == null || !response.isSuccess() || response.getQuotes() == null) {
-            throw new RuntimeException("Nepodařilo se získat historická data");
+            throw new ExternalApiException("Nepodařilo se získat historická data pro výpočet průměrů.");
         }
 
         List<String> requestedSymbols = parseSymbols(symbols);

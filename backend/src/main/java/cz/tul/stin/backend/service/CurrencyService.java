@@ -1,6 +1,7 @@
 package cz.tul.stin.backend.service;
 
 import cz.tul.stin.backend.client.ExchangeRateClient;
+import cz.tul.stin.backend.exception.ExternalApiException;
 import cz.tul.stin.backend.model.CurrencySymbol;
 import cz.tul.stin.backend.model.ExchangeRate;
 import cz.tul.stin.backend.model.dto.LiveRatesResponse;
@@ -21,7 +22,7 @@ public class CurrencyService {
         LiveRatesResponse response = exchangeRateClient.getLatestRates(baseCurrency, symbols);
 
         if (response == null || !response.isSuccess() || response.getQuotes() == null) {
-            throw new RuntimeException("Nepodařilo se získat data z API");
+            throw new ExternalApiException("Nepodařilo se získat aktuální kurzy z burzy.");
         }
 
         List<ExchangeRate> domainRates = new ArrayList<>();

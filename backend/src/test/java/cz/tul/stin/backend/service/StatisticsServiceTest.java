@@ -1,6 +1,7 @@
 package cz.tul.stin.backend.service;
 
 import cz.tul.stin.backend.client.ExchangeRateClient;
+import cz.tul.stin.backend.exception.ExternalApiException;
 import cz.tul.stin.backend.model.dto.ExtremesResult;
 import cz.tul.stin.backend.model.dto.LiveRatesResponse;
 import cz.tul.stin.backend.model.dto.TimeframeResponse;
@@ -140,7 +141,7 @@ class StatisticsServiceTest {
         Mockito.when(exchangeRateClient.getLatestRates("EUR", "CZK"))
                 .thenReturn(null);
 
-        assertThrows(RuntimeException.class, () -> statisticsService.findExtremes("EUR", "CZK"));
+        assertThrows(ExternalApiException.class, () -> statisticsService.findExtremes("EUR", "CZK"));
     }
 
     @Test
@@ -148,7 +149,7 @@ class StatisticsServiceTest {
         Mockito.when(exchangeRateClient.getHistoricalRates("2025-01-01", "2025-01-03", "EUR", "CZK"))
                 .thenReturn(null);
 
-        assertThrows(RuntimeException.class, () -> statisticsService.calculateAverages("2025-01-01", "2025-01-03", "EUR", "CZK"));
+        assertThrows(ExternalApiException.class, () -> statisticsService.calculateAverages("2025-01-01", "2025-01-03", "EUR", "CZK"));
     }
 
     @Test
@@ -157,7 +158,7 @@ class StatisticsServiceTest {
         mockResponse.setSuccess(false);
         Mockito.when(exchangeRateClient.getLatestRates("EUR", "CZK")).thenReturn(mockResponse);
 
-        assertThrows(RuntimeException.class, () -> statisticsService.findExtremes("EUR", "CZK"));
+        assertThrows(ExternalApiException.class, () -> statisticsService.findExtremes("EUR", "CZK"));
     }
 
     @Test
@@ -166,7 +167,7 @@ class StatisticsServiceTest {
         mockResponse.setSuccess(false);
         Mockito.when(exchangeRateClient.getHistoricalRates("2025-01-01", "2025-01-03", "EUR", "CZK")).thenReturn(mockResponse);
 
-        assertThrows(RuntimeException.class, () -> statisticsService.calculateAverages("2025-01-01", "2025-01-03", "EUR", "CZK"));
+        assertThrows(ExternalApiException.class, () -> statisticsService.calculateAverages("2025-01-01", "2025-01-03", "EUR", "CZK"));
     }
 
     @Test
@@ -177,7 +178,7 @@ class StatisticsServiceTest {
 
         Mockito.when(exchangeRateClient.getLatestRates("EUR", "CZK")).thenReturn(mockResponse);
 
-        assertThrows(RuntimeException.class, () -> statisticsService.findExtremes("EUR", "CZK"));
+        assertThrows(ExternalApiException.class, () -> statisticsService.findExtremes("EUR", "CZK"));
     }
 
     @Test
@@ -188,6 +189,6 @@ class StatisticsServiceTest {
 
         Mockito.when(exchangeRateClient.getHistoricalRates("2025-01-01", "2025-01-03", "EUR", "CZK")).thenReturn(mockResponse);
 
-        assertThrows(RuntimeException.class, () -> statisticsService.calculateAverages("2025-01-01", "2025-01-03", "EUR", "CZK"));
+        assertThrows(ExternalApiException.class, () -> statisticsService.calculateAverages("2025-01-01", "2025-01-03", "EUR", "CZK"));
     }
 }
