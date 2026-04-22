@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -44,6 +45,7 @@ class SettingsServiceTest {
     void testSaveAndGetSettings_Success() {
         UserSettings settingsToSave = new UserSettings();
         settingsToSave.setBaseCurrency("JPY");
+        settingsToSave.setSelectedCurrencies(List.of("USD", "EUR"));
 
         assertDoesNotThrow(() -> settingsService.saveSettings(settingsToSave));
 
@@ -57,18 +59,23 @@ class SettingsServiceTest {
 
         UserSettings loadedSettings = settingsService.getSettings();
         assertNotNull(loadedSettings);
-        assertEquals("EUR", loadedSettings.getBaseCurrency());
+        assertEquals("EUR", loadedSettings.getBaseCurrency()); // Předpokládám, že výchozí je EUR
     }
 
     @Test
-    void testSaveSettings_ThrowsExceptionOnBadPath() {
-        ReflectionTestUtils.setField(settingsService, "settingsFilePath", "/nesmyslna/cesta/k/souboru.json");
+    void testSaveSettings_ThrowsExceptionOnBadPath() throws IOException {
+        File dummyFile = File.createTempFile("dummy", ".txt");
+        dummyFile.deleteOnExit();
+        String guaranteedBadPath = dummyFile.getAbsolutePath() + "/soubor.json";
+        ReflectionTestUtils.setField(settingsService, "settingsFilePath", guaranteedBadPath);
 
         UserSettings settings = new UserSettings();
+        settings.setBaseCurrency("EUR");
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> settingsService.saveSettings(settings));
         assertTrue(exception.getMessage().contains("Nepodařilo se uložit nastavení"));
     }
+
     @Test
     void testGetSettings_CatchesIOException_WhenFileIsCorrupted() throws IOException {
         Files.writeString(tempFile, "toto urcite neni validni json struktura { [");
@@ -77,5 +84,50 @@ class SettingsServiceTest {
 
         assertNotNull(loadedSettings);
         assertEquals("EUR", loadedSettings.getBaseCurrency());
+    }
+
+
+    @Test
+    void testSaveSettings_ThrowsExceptionOnInvalidBaseCurrency() {
+        UserSettings settings = new UserSettings();
+        settings.setBaseCurrency("ZEME");
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> settingsService.saveSettings(settings));
+        assertTrue(exception.getMessage().contains("Nepodporovaná základní měna"));
+    }
+
+    @Test
+    void testSaveSettings_ThrowsExceptionOnInvalidCurrencyInList() {
+        UserSettings settings = new UserSettings();
+        settings.setBaseCurrency("EUR");
+        settings.setSelectedCurrencies(List.of("CZK", "NEEXISTUJE", "USD"));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> settingsService.saveSettings(settings));
+        assertTrue(exception.getMessage().contains("Nepodporovaná měna v seznamu"));
+    }
+
+    @Test
+    void testSaveSettings_SuccessWithNullSelectedCurrencies() {
+        UserSettings settings = new UserSettings();
+        settings.setBaseCurrency("EUR");
+        settings.setSelectedCurrencies(null);
+
+        assertDoesNotThrow(() -> settingsService.saveSettings(settings));
+    }
+
+    @Test
+    void testSaveSettings_SuccessWithNoParentDirectory() throws IOException {
+        String noParentPath = "test-pouze-jmeno-souboru.json";
+        ReflectionTestUtils.setField(settingsService, "settingsFilePath", noParentPath);
+
+        UserSettings settings = new UserSettings();
+        settings.setBaseCurrency("CZK");
+
+        try {
+            assertDoesNotThrow(() -> settingsService.saveSettings(settings));
+            assertTrue(Files.exists(Path.of(noParentPath)));
+        } finally {
+            Files.deleteIfExists(Path.of(noParentPath));
+        }
     }
 }
