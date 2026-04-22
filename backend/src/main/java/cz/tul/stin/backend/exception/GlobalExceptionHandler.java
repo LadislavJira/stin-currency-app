@@ -6,16 +6,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ExternalApiException.class)
-    public ResponseEntity<ApiError> handleExternalApiException(ExternalApiException ex) {
+    public ResponseEntity<ApiError> handleExternalApiException(ExternalApiException ex, HttpServletRequest request) {
+
+        String requestUrl = request.getRequestURI() + (request.getQueryString() != null ? "?" + request.getQueryString() : "");
+
+        log.error("Chyba externího API při volání [{}]: {}", requestUrl, ex.getMessage(), ex);
+
         ApiError error = new ApiError(
                 HttpStatus.BAD_REQUEST.value(),
                 "Chyba externího API",
@@ -25,7 +33,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<Object> handleNotFound(NoResourceFoundException ex) {
+    public ResponseEntity<Object> handleNotFound(NoResourceFoundException ex, HttpServletRequest request) {
+        String requestUrl = request.getRequestURI() + (request.getQueryString() != null ? "?" + request.getQueryString() : "");
+
+        log.warn("Nenalezeno (404) při volání [{}]: {}", requestUrl, ex.getMessage());
 
         Map<String, Object> body = new HashMap<>();
         body.put("status", 404);
@@ -37,7 +48,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleGeneralException(Exception ex) {
+    public ResponseEntity<ApiError> handleGeneralException(Exception ex, HttpServletRequest request) {
+        String requestUrl = request.getRequestURI() + (request.getQueryString() != null ? "?" + request.getQueryString() : "");
+
+       log.error("Neočekávaná interní chyba (500) při volání [{}]: {}", requestUrl, ex.getMessage(), ex);
+
         ApiError error = new ApiError(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Interní chyba serveru",

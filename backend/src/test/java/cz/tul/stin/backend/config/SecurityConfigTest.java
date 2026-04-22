@@ -13,7 +13,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+        "API_USERNAME=testAdmin",
+        "API_PASSWORD=testPassword123"
+})
 @AutoConfigureMockMvc
 class SecurityConfigTest {
 
