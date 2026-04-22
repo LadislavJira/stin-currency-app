@@ -1,5 +1,6 @@
 package cz.tul.stin.backend.controller;
 
+import cz.tul.stin.backend.model.ExchangeRate;
 import cz.tul.stin.backend.model.dto.ExtremesResult;
 import cz.tul.stin.backend.service.CurrencyService;
 import cz.tul.stin.backend.service.StatisticsService;
@@ -12,10 +13,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(MockitoExtension.class)
 class CurrencyControllerTest {
@@ -31,15 +35,19 @@ class CurrencyControllerTest {
 
     @Test
     void testGetLatestRates() {
-        Map<String, Double> mockMap = new HashMap<>();
-        mockMap.put("CZK", 25.0);
+        List<ExchangeRate> mockList = new ArrayList<>();
+        ExchangeRate rate = new ExchangeRate();
+        rate.setCurrency("CZK");
+        rate.setRate(25.0);
+        mockList.add(rate);
 
-        Mockito.when(currencyService.getFilteredLatestRates("EUR")).thenReturn(mockMap);
+        Mockito.when(currencyService.getFilteredLatestRates("EUR", "CZK")).thenReturn(mockList);
 
-        ResponseEntity<Map<String, Double>> response = currencyController.getLatestRates("EUR");
+        ResponseEntity<List<ExchangeRate>> response = currencyController.getLatestRates("EUR", "CZK");
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(25.0, response.getBody().get("CZK"));
+        assertNotNull(response.getBody());
+        assertEquals("CZK", response.getBody().get(0).getCurrency());
     }
 
     @Test

@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "terms": "https://currencylayer.com/terms",
+  "privacy": "https://currencylayer.com/privacy",
+  "timeframe": true,
+  "start_date": "2025-01-01",
+  "end_date": "2025-01-03",
+  "source": "JPY",
+  "quotes": {
+    "2025-01-01": {
+      "JPYCZK": 0.154675,
+      "JPYUSD": 0.006357,
+      "JPYGBP": 0.005078,
+      "JPYAUD": 0.010262,
+      "JPYPLN": 0.026264
+    },
+    "2025-01-02": {
+      "JPYCZK": 0.155684,
+      "JPYUSD": 0.006355,
+      "JPYGBP": 0.005133,
+      "JPYAUD": 0.010248,
+      "JPYPLN": 0.026455
+    },
+    "2025-01-03": {
+      "JPYCZK": 0.155268,
+      "JPYUSD": 0.006362,
+      "JPYGBP": 0.005121,
+      "JPYAUD": 0.010232,
+      "JPYPLN": 0.026355
+    }
+  }
+}
