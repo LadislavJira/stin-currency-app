@@ -114,4 +114,21 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     }
+    @Test
+    void handleIllegalArgumentException_ShouldReturn400AndValidationErrorMessage() {
+        when(request.getRequestURI()).thenReturn("/api/settings");
+
+        String errorMessage = "Neplatný kód základní měny: ZEME";
+        IllegalArgumentException ex = new IllegalArgumentException(errorMessage);
+
+        ResponseEntity<ApiError> response = handler.handleIllegalArgumentException(ex, request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+
+        assertEquals(400, response.getBody().getStatus());
+        assertEquals("Chyba validace dat", response.getBody().getError());
+        assertEquals(errorMessage, response.getBody().getMessage());
+    }
+
 }

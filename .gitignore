@@ -10,8 +10,11 @@ target/
 *.jar
 *.war
 !maven-wrapper.jar
+user-settings.json
 logs/
+home/
 *.log
+*.gz
 
 # === Frontend (React / Node / Vite) ===
 node_modules/
