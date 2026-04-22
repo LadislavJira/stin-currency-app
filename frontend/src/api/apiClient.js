@@ -10,9 +10,22 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-    const token = sessionStorage.getItem('authToken');
-    if (token) {
+    const token = localStorage.getItem('authToken');
+    if (token && !config.headers.Authorization) {
         config.headers.Authorization = `Basic ${token}`;
     }
     return config;
 });
+
+apiClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            localStorage.removeItem('authToken');
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);

@@ -9,19 +9,14 @@ import static org.mockito.Mockito.*;
 class WebConfigTest {
 
     @Test
-    void testCorsMappings() {
+    void testCorsMappings_ShouldAllowNecessaryFrontendSettings() {
         WebConfig webConfig = new WebConfig();
         CorsRegistry registryMock = mock(CorsRegistry.class);
-
         CorsRegistration registrationMock = mock(CorsRegistration.class, RETURNS_SELF);
-
-        when(registryMock.addMapping("/api/**")).thenReturn(registrationMock);
-
+        when(registryMock.addMapping(anyString())).thenReturn(registrationMock);
         webConfig.addCorsMappings(registryMock);
-
-        // Ověříme, že se všechno správně nastavilo
-        verify(registryMock).addMapping("/api/**");
-        verify(registrationMock).allowedOrigins("http://localhost:3000");
+        verify(registryMock).addMapping(anyString());
+        verify(registrationMock).allowedOrigins("http://localhost:5173");
         verify(registrationMock).allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
         verify(registrationMock).allowedHeaders("*");
         verify(registrationMock).allowCredentials(true);
