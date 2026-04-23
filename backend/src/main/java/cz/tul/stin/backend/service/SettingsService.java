@@ -1,6 +1,7 @@
 package cz.tul.stin.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cz.tul.stin.backend.exception.StorageException;
 import cz.tul.stin.backend.model.CurrencySymbol;
 import cz.tul.stin.backend.model.UserSettings;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +51,7 @@ public class SettingsService {
 
         } catch (IOException e) {
             log.error("Chyba při ukládání uživatelského nastavení na disk: {}", e.getMessage());
-            throw new RuntimeException("Nepodařilo se uložit nastavení na disk.");
+            throw new StorageException("Nepodařilo se uložit nastavení na disk.", e);
         }
     }
 
