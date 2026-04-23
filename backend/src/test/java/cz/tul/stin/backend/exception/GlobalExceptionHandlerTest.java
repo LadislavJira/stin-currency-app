@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Map;
@@ -49,13 +51,11 @@ class GlobalExceptionHandlerTest {
 
         NoResourceFoundException ex = new NoResourceFoundException(HttpMethod.GET, "/api/neexistuje", "api/neexistuje");
 
-        // AKCE
         ResponseEntity<Object> response = handler.handleNotFound(ex, request);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertInstanceOf(Map.class, response.getBody());
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> body = (Map<String, Object>) response.getBody();
 
         assertEquals(404, body.get("status"));
@@ -129,6 +129,30 @@ class GlobalExceptionHandlerTest {
         assertEquals(400, response.getBody().getStatus());
         assertEquals("Chyba validace dat", response.getBody().getError());
         assertEquals(errorMessage, response.getBody().getMessage());
+    }
+
+    @Test
+    void testHandleStorageException() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/api/test");
+        StorageException ex = new StorageException("Disk error", new RuntimeException());
+
+        ResponseEntity<ApiError> response = handler.handleStorageException(ex, request);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Chyba úložiště", response.getBody().getError());
+    }
+
+    @Test
+    void testHandleMissingParams() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MissingServletRequestParameterException ex = new MissingServletRequestParameterException("symbols", "String");
+
+        ResponseEntity<ApiError> response = handler.handleMissingParams(ex, request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Chybějící parametr", response.getBody().getError());
     }
 
 }
