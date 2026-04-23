@@ -74,4 +74,29 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(cz.tul.stin.backend.exception.StorageException.class)
+    public ResponseEntity<ApiError> handleStorageException(cz.tul.stin.backend.exception.StorageException ex, HttpServletRequest request) {
+        String requestUrl = request.getRequestURI();
+        log.error("Chyba souborového systému při volání [{}]: {}", requestUrl, ex.getMessage(), ex);
+        ApiError error = new ApiError(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Chyba úložiště",
+                "Nepodařilo se uložit nebo načíst data ze serveru."
+        );
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiError> handleMissingParams(org.springframework.web.bind.MissingServletRequestParameterException ex, HttpServletRequest request) {
+        String url = request.getRequestURI();
+        log.warn("Chybějící parametr na [{}]: {}", url, ex.getMessage());
+
+        ApiError error = new ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                "Chybějící parametr",
+                "Chybí povinný parametr: " + ex.getParameterName()
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
 }

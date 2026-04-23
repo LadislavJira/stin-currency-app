@@ -1,78 +1,104 @@
 package cz.tul.stin.backend.controller;
 
-import cz.tul.stin.backend.model.ExchangeRate;
+import cz.tul.stin.backend.model.dto.DashboardResponse;
 import cz.tul.stin.backend.model.dto.ExtremesResult;
 import cz.tul.stin.backend.service.CurrencyService;
 import cz.tul.stin.backend.service.StatisticsService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(CurrencyController.class)
 class CurrencyControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
     private CurrencyService currencyService;
 
-    @Mock
+    @MockitoBean
     private StatisticsService statisticsService;
 
-    @InjectMocks
-    private CurrencyController currencyController;
-
     @Test
-    void testGetLatestRates() {
-        List<ExchangeRate> mockList = new ArrayList<>();
-        ExchangeRate rate = new ExchangeRate();
-        rate.setCurrency("CZK");
-        rate.setRate(25.0);
-        mockList.add(rate);
+    @WithMockUser
+    void testGetAvailableSymbols_ReturnsListOfCurrencies() throws Exception {
+        List<String> mockSymbols = Arrays.asList("EUR", "CZK", "USD");
+        Mockito.when(currencyService.getAvailableSymbols()).thenReturn(mockSymbols);
 
-        Mockito.when(currencyService.getFilteredLatestRates("EUR", "CZK")).thenReturn(mockList);
-
-        ResponseEntity<List<ExchangeRate>> response = currencyController.getLatestRates("EUR", "CZK");
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("CZK", response.getBody().get(0).getCurrency());
+        mockMvc.perform(get("/api/currencies/symbols")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[1]").value("CZK"));
     }
 
     @Test
-    void testGetExtremes() {
-        ExtremesResult mockResult = new ExtremesResult("CZK", 25.0, "USD", 1.1);
+    @WithMockUser
+    void testGetDashboardData_WithValidParams_ReturnsDashboardResponse() throws Exception {
+        ExtremesResult extremes = new ExtremesResult("CZK", 25.0, "USD", 1.1);
+        Map<String, Double> averages = new HashMap<>();
+        averages.put("CZK", 24.5);
+        Map<String, Map<String, Double>> timeseries = new HashMap<>();
 
-        Mockito.when(statisticsService.findExtremes("EUR", "CZK,USD")).thenReturn(mockResult);
+        DashboardResponse mockResponse = DashboardResponse.builder()
+                .extremes(extremes)
+                .averages(averages)
+                .timeseries(timeseries)
+                .build();
 
-        ResponseEntity<ExtremesResult> response = currencyController.getExtremes("EUR", "CZK,USD");
+        Mockito.when(statisticsService.getDashboardData(eq("EUR"), eq("CZK,USD"), eq("2025-01-01"), eq("2025-01-02")))
+                .thenReturn(mockResponse);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("CZK", response.getBody().getStrongestCurrency());
+        mockMvc.perform(get("/api/currencies/dashboard")
+                        .param("base", "EUR")
+                        .param("symbols", "CZK,USD")
+                        .param("startDate", "2025-01-01")
+                        .param("endDate", "2025-01-02")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.extremes.strongestCurrency").value("CZK"))
+                .andExpect(jsonPath("$.extremes.strongestValue").value(25.0))
+                .andExpect(jsonPath("$.averages.CZK").value(24.5));
     }
 
     @Test
-    void testGetAverages() {
-        Map<String, Double> mockMap = new HashMap<>();
-        mockMap.put("CZK", 24.5);
+    @WithMockUser
+    void testGetDashboardData_WithoutRequiredParams_ReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/currencies/dashboard")
+                        .param("base", "EUR"))
+                .andExpect(status().isBadRequest());
+    }
 
-        Mockito.when(statisticsService.calculateAverages("2025-01-01", "2025-01-03", "EUR", "CZK"))
-                .thenReturn(mockMap);
+    @Test
+    @WithMockUser
+    void testGetDashboardData_UsesDefaultBaseCurrency_WhenBaseIsMissing() throws Exception {
+        DashboardResponse mockResponse = DashboardResponse.builder().build();
 
-        ResponseEntity<Map<String, Double>> response = currencyController.getAverages("EUR", "CZK", "2025-01-01", "2025-01-03");
+        Mockito.when(statisticsService.getDashboardData(eq("EUR"), eq("CZK"), eq("2025-01-01"), eq("2025-01-01")))
+                .thenReturn(mockResponse);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(24.5, response.getBody().get("CZK"));
+        mockMvc.perform(get("/api/currencies/dashboard")
+                        .param("symbols", "CZK")
+                        .param("startDate", "2025-01-01")
+                        .param("endDate", "2025-01-01")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        Mockito.verify(statisticsService).getDashboardData("EUR", "CZK", "2025-01-01", "2025-01-01");
     }
 }
