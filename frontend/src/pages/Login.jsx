@@ -1,13 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../api/apiClient';
-import './Login.css'; // Přidáme odkaz na styly!
+import { useTranslation } from 'react-i18next';
+import './Login.css';
 
 export default function Login() {
+    const { t, i18n } = useTranslation();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
+
+    const changeLanguage = (lang) => {
+        i18n.changeLanguage(lang);
+        localStorage.setItem('appLang', lang);
+    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -27,27 +34,32 @@ export default function Login() {
 
         } catch (err) {
             if (!err.response) {
-                setError('Server neodpovídá. Ujistěte se, že běží backend (port 8080).');
+                setError(t('login.errorServer'));
             }
             else if (err.response.status === 401) {
-                setError('Nesprávné uživatelské jméno nebo heslo.');
+                setError(t('login.errorAuth'));
             }
             else {
-                setError('Něco se pokazilo. Zkuste to prosím později.');
+                setError(t('login.errorGeneric'));
             }
         }
     };
 
     return (
         <div className="login-container">
+            <div className="login-lang-switcher">
+                <button className={i18n.language === 'cs' ? 'active' : ''} onClick={() => changeLanguage('cs')}>CZ</button>
+                <button className={i18n.language === 'en' ? 'active' : ''} onClick={() => changeLanguage('en')}>EN</button>
+            </div>
+
             <div className="login-card">
-                <h1 className="login-title">Přihlášení </h1>
+                <h1 className="login-title">{t('login.title')}</h1>
 
                 {error && <div className="login-error">{error}</div>}
 
                 <form onSubmit={handleLogin} className="login-form">
                     <div className="input-group">
-                        <label>Uživatelské jméno</label>
+                        <label>{t('login.username')}</label>
                         <input
                             type="text"
                             value={username}
@@ -56,7 +68,7 @@ export default function Login() {
                         />
                     </div>
                     <div className="input-group">
-                        <label>Heslo</label>
+                        <label>{t('login.password')}</label>
                         <input
                             type="password"
                             value={password}
@@ -65,7 +77,7 @@ export default function Login() {
                         />
                     </div>
                     <button type="submit" className="login-button">
-                        Přihlásit se
+                        {t('login.submit')}
                     </button>
                 </form>
             </div>

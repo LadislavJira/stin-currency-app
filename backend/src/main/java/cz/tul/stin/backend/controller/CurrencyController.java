@@ -11,9 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/currencies")
@@ -26,7 +24,7 @@ public class CurrencyController {
 
     @GetMapping("/symbols")
     public ResponseEntity<List<String>> getAvailableSymbols() {
-        log.info("Přijat HTTP GET požadavek na /api/currencies/symbols");
+        log.info("Received HTTP GET request for /api/currencies/symbols");
 
         List<String> symbols = currencyService.getAvailableSymbols();
 
@@ -40,7 +38,9 @@ public class CurrencyController {
             @RequestParam String startDate,
             @RequestParam String endDate) {
 
-        log.info("Přijat HTTP GET požadavek na /api/currencies/dashboard");
+        log.info("Received HTTP GET request for /api/currencies/dashboard with base={}, symbols={}, startDate={}, endDate={}",
+                base, symbols, startDate, endDate);
+
         DashboardResponse response = statisticsService.getDashboardData(base, symbols, startDate, endDate);
         return ResponseEntity.ok(response);
     }

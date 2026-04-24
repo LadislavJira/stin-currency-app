@@ -59,7 +59,7 @@ class SettingsServiceTest {
 
         UserSettings loadedSettings = settingsService.getSettings();
         assertNotNull(loadedSettings);
-        assertEquals("EUR", loadedSettings.getBaseCurrency()); // Předpokládám, že výchozí je EUR
+        assertEquals("EUR", loadedSettings.getBaseCurrency());
     }
 
     @Test
@@ -73,7 +73,7 @@ class SettingsServiceTest {
         settings.setBaseCurrency("EUR");
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> settingsService.saveSettings(settings));
-        assertTrue(exception.getMessage().contains("Nepodařilo se uložit nastavení"));
+        assertTrue(exception.getMessage().contains("Failed to save settings to disk"));
     }
 
     @Test
@@ -93,7 +93,7 @@ class SettingsServiceTest {
         settings.setBaseCurrency("ZEME");
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> settingsService.saveSettings(settings));
-        assertTrue(exception.getMessage().contains("Nepodporovaná základní měna"));
+        assertEquals("error.currency.unsupportedBase", exception.getMessage());
     }
 
     @Test
@@ -103,7 +103,7 @@ class SettingsServiceTest {
         settings.setSelectedCurrencies(List.of("CZK", "NEEXISTUJE", "USD"));
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> settingsService.saveSettings(settings));
-        assertTrue(exception.getMessage().contains("Nepodporovaná měna v seznamu"));
+        assertEquals("error.currency.unsupportedTarget", exception.getMessage());
     }
 
     @Test

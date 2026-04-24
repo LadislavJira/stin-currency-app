@@ -4,6 +4,7 @@ import cz.tul.stin.backend.model.dto.ApiError;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +21,18 @@ class GlobalExceptionHandlerTest {
 
     private GlobalExceptionHandler handler;
     private HttpServletRequest request;
+    private MessageSource messageSource;
 
     @BeforeEach
     void setUp() {
-        handler = new GlobalExceptionHandler();
+        messageSource = mock(MessageSource.class);
+
+        when(messageSource.getMessage(anyString(), any(), any())).thenAnswer(invocation -> {
+            String key = invocation.getArgument(0);
+            return key;
+        });
+
+        handler = new GlobalExceptionHandler(messageSource);
         request = mock(HttpServletRequest.class);
     }
 
@@ -40,7 +49,7 @@ class GlobalExceptionHandlerTest {
         assertNotNull(response.getBody());
 
         assertEquals(400, response.getBody().getStatus());
-        assertEquals("Chyba externího API", response.getBody().getError());
+        assertEquals("error.title.externalApi", response.getBody().getError());
         assertEquals("Služba exchangerate neodpovídá", response.getBody().getMessage());
     }
 
@@ -59,7 +68,7 @@ class GlobalExceptionHandlerTest {
         Map<String, Object> body = (Map<String, Object>) response.getBody();
 
         assertEquals(404, body.get("status"));
-        assertEquals("Nenalezeno", body.get("error"));
+        assertEquals("error.title.notFound", body.get("error"));
         assertNotNull(body.get("timestamp"));
     }
 
@@ -76,8 +85,9 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(500, response.getBody().getStatus());
-        assertEquals("Interní chyba serveru", response.getBody().getError());
-        assertEquals("Došlo k neočekávané chybě. Zkuste to prosím později.", response.getBody().getMessage());
+
+        assertEquals("error.title.internalServerError", response.getBody().getError());
+        assertEquals("error.message.internalServerError", response.getBody().getMessage());
 
         assertFalse(response.getBody().getMessage().contains("TajneHeslo123"));
     }
@@ -114,11 +124,12 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     }
+
     @Test
     void handleIllegalArgumentException_ShouldReturn400AndValidationErrorMessage() {
         when(request.getRequestURI()).thenReturn("/api/settings");
 
-        String errorMessage = "Neplatný kód základní měny: ZEME";
+        String errorMessage = "error.date.invalid";
         IllegalArgumentException ex = new IllegalArgumentException(errorMessage);
 
         ResponseEntity<ApiError> response = handler.handleIllegalArgumentException(ex, request);
@@ -127,7 +138,7 @@ class GlobalExceptionHandlerTest {
         assertNotNull(response.getBody());
 
         assertEquals(400, response.getBody().getStatus());
-        assertEquals("Chyba validace dat", response.getBody().getError());
+        assertEquals("error.title.validation", response.getBody().getError());
         assertEquals(errorMessage, response.getBody().getMessage());
     }
 
@@ -141,7 +152,7 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Chyba úložiště", response.getBody().getError());
+        assertEquals("error.title.storage", response.getBody().getError());
     }
 
     @Test
@@ -152,7 +163,6 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ApiError> response = handler.handleMissingParams(ex, request);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals("Chybějící parametr", response.getBody().getError());
+        assertEquals("error.title.missingParam", response.getBody().getError());
     }
-
 }

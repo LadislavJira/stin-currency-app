@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CurrencyService {
     public List<String> getAvailableSymbols() {
-        log.info("Sestavuji seznam dostupných měn z výčtového typu.");
+        log.info("Building list of available currencies from enum.");
         return Arrays.stream(CurrencySymbol.values())
                 .map(Enum::name)
                 .collect(Collectors.toList());
