@@ -26,17 +26,17 @@ public class MockExchangeRateClient implements ExchangeRateClient {
             InputStream is = getClass().getResourceAsStream("/mocks/live.json");
             return objectMapper.readValue(is, LiveRatesResponse.class);
         } catch (Exception e) {
-            throw new RuntimeException("Chyba při načítání mock dat pro aktuální kurzy", e);
+            throw new RuntimeException("Error loading mock data for latest rates", e);
         }
     }
+
     @Override
     public TimeframeResponse getHistoricalRates(String startDate, String endDate, String base, String symbols) {
         try {
             InputStream is = getClass().getResourceAsStream("/mocks/timeframe.json");
             return objectMapper.readValue(is, TimeframeResponse.class);
         } catch (Exception e) {
-            throw new RuntimeException("Chyba při načítání mock dat pro historii ", e);
+            throw new RuntimeException("Error loading mock data for historical rates", e);
         }
     }
 }
-

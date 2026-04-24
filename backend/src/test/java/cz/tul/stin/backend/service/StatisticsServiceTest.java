@@ -186,30 +186,20 @@ class StatisticsServiceTest {
 
 
     @Test
-    void getDashboardData_Success_WithEmptySymbols() {
-        LiveRatesResponse liveResponse = new LiveRatesResponse();
-        liveResponse.setSuccess(true);
-        liveResponse.setQuotes(new HashMap<>());
+    void getDashboardData_ThrowsException_WithEmptyOrNullSymbols() {
+        IllegalArgumentException exception1 = assertThrows(IllegalArgumentException.class, () -> {
+            statisticsService.getDashboardData("EUR", "", "2025-01-01", "2025-01-02");
+        });
+        assertEquals("error.currency.empty", exception1.getMessage());
 
-        TimeframeResponse timeframeResponse = new TimeframeResponse();
-        timeframeResponse.setSuccess(true);
-        timeframeResponse.setQuotes(new HashMap<>());
-
-        Mockito.when(exchangeRateClient.getLatestRates("EUR", ""))
-                .thenReturn(liveResponse);
-        Mockito.when(exchangeRateClient.getHistoricalRates("2025-01-01", "2025-01-02", "EUR", ""))
-                .thenReturn(timeframeResponse);
-
-        DashboardResponse result = statisticsService.getDashboardData("EUR", "", "2025-01-01", "2025-01-02");
-        assertNotNull(result);
-        assertTrue(result.getAverages().isEmpty());
+        IllegalArgumentException exception2 = assertThrows(IllegalArgumentException.class, () -> {
+            statisticsService.getDashboardData("EUR", null, "2025-01-01", "2025-01-02");
+        });
+        assertEquals("error.currency.empty", exception2.getMessage());
     }
 
-
-
-
     @Test
-    void getDashboardData_Success_WithNullSymbolsAndNullKeys() {
+    void getDashboardData_Success_WithNullKeysFromApi() {
         Map<String, Double> latestQuotes = new HashMap<>();
         latestQuotes.put(null, 25.0);
         latestQuotes.put("EURCZK", 25.0);
@@ -221,7 +211,6 @@ class StatisticsServiceTest {
         Map<String, Double> day1 = new HashMap<>();
         day1.put(null, 25.0);
         day1.put("SHORT", 5.0);
-        day1.put(null, 5.0);
         day1.put("EURPLN", 4.0);
         timeframeQuotes.put("2024-12-31", day1);
         timeframeQuotes.put("2025-01-01", day1);
@@ -231,10 +220,9 @@ class StatisticsServiceTest {
         timeframeResponse.setSuccess(true);
         timeframeResponse.setQuotes(timeframeQuotes);
 
-        Mockito.when(exchangeRateClient.getLatestRates("EUR", null)).thenReturn(liveResponse);
-        Mockito.when(exchangeRateClient.getHistoricalRates("2025-01-01", "2025-01-01", "EUR", null)).thenReturn(timeframeResponse);
-
-        DashboardResponse result = statisticsService.getDashboardData("EUR", null, "2025-01-01", "2025-01-01");
+        Mockito.when(exchangeRateClient.getLatestRates("EUR", "CZK")).thenReturn(liveResponse);
+        Mockito.when(exchangeRateClient.getHistoricalRates("2025-01-01", "2025-01-01", "EUR", "CZK")).thenReturn(timeframeResponse);
+        DashboardResponse result = statisticsService.getDashboardData("EUR", "CZK", "2025-01-01", "2025-01-01");
         assertNotNull(result);
     }
 
@@ -293,5 +281,18 @@ class StatisticsServiceTest {
 
         DashboardResponse result = statisticsService.getDashboardData("EUR", "CZK", "2025-01-01", "2025-01-02");
         assertTrue(result.getTimeseries().isEmpty(), "Datum po endDate muselo být vyfiltrováno.");
+    }
+    @Test
+    void parseSymbols_NullAndEmpty() {
+        LiveRatesResponse mockResponse = new LiveRatesResponse();
+        mockResponse.setSuccess(true);
+        mockResponse.setQuotes(new HashMap<>());
+
+        Mockito.when(exchangeRateClient.getLatestRates("EUR", null)).thenReturn(mockResponse);
+        statisticsService.findExtremes("EUR", null);
+
+        Mockito.when(exchangeRateClient.getLatestRates("EUR", "")).thenReturn(mockResponse);
+        statisticsService.findExtremes("EUR", "");
+
     }
 }

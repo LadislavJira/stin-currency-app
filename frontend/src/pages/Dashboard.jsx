@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { currencyService } from '../api/currencyService.js';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import './Dashboard.css';
 
 const COLORS = ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#9333ea', '#0891b2', '#be123c'];
@@ -18,6 +19,8 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [dashboardData, setDashboardData] = useState(null);
+
+    const { t, i18n } = useTranslation();
 
     const chartData = dashboardData && dashboardData.timeseries
         ? Object.entries(dashboardData.timeseries).map(([date, rates]) => ({
@@ -54,6 +57,11 @@ export default function Dashboard() {
         navigate('/login');
     };
 
+    const changeLanguage = (lang) => {
+        i18n.changeLanguage(lang);
+        localStorage.setItem('appLang', lang);
+    };
+
     const saveSettings = async () => {
         try {
             const payload = {
@@ -61,6 +69,7 @@ export default function Dashboard() {
                 selectedCurrencies: selectedCurrencies
             };
             const responseMessage = await currencyService.saveSettings(payload);
+            // Zde by šlo přeložit i "Nastavení uloženo", ale protože to vrací backend jako responseMessage, necháme to tak.
             alert(responseMessage);
         } catch (err) {
             setError(err.message);
@@ -69,7 +78,7 @@ export default function Dashboard() {
 
     const handleFetchData = async () => {
         if (selectedCurrencies.length === 0) {
-            setError("Vyberte alespoň jednu sledovanou měnu.");
+            setError(t('dashboard.noCurrencyError'));
             return;
         }
 
@@ -89,26 +98,32 @@ export default function Dashboard() {
     return (
         <div className="dashboard-container">
             <header className="dashboard-header">
-                <div className="logo">Currency Analyser</div>
+                <div className="logo">{t('dashboard.headerTitle')}</div>
+
+                <div className="lang-switcher">
+                    <button className={i18n.language === 'cs' ? 'active' : ''} onClick={() => changeLanguage('cs')}>CZ</button>
+                    <button className={i18n.language === 'en' ? 'active' : ''} onClick={() => changeLanguage('en')}>EN</button>
+                </div>
+
                 <div className="user-info">
-                    <span>Uživatel: admin</span>
-                    <button onClick={handleLogout} className="logout-button">Odhlásit</button>
+                    <span>{t('dashboard.user')} admin</span>
+                    <button onClick={handleLogout} className="logout-button">{t('dashboard.logout')}</button>
                 </div>
             </header>
 
             <div className="dashboard-layout">
                 <aside className="controls-panel">
-                    <h3>Nastavení analýzy</h3>
+                    <h3>{t('dashboard.settingsTitle')}</h3>
 
                     <div className="control-group">
-                        <label>Základní měna (Base)</label>
+                        <label>{t('dashboard.baseCurrency')}</label>
                         <select value={baseCurrency} onChange={(e) => setBaseCurrency(e.target.value)}>
                             {availableCurrencies.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                     </div>
 
                     <div className="control-group">
-                        <label>Sledované měny</label>
+                        <label>{t('dashboard.targetCurrencies')}</label>
                         <div className="currency-selector">
                             {availableCurrencies.filter(c => c !== baseCurrency).map(c => (
                                 <label key={c} className="checkbox-label">
@@ -126,14 +141,14 @@ export default function Dashboard() {
                     </div>
 
                     <div className="control-group">
-                        <label>Období od</label>
+                        <label>{t('dashboard.dateFrom')}</label>
                         <input
                             type="date"
                             value={startDate}
                             max={endDate}
                             onChange={(e) => setStartDate(e.target.value)}
                         />
-                        <label>Období do</label>
+                        <label>{t('dashboard.dateTo')}</label>
                         <input
                             type="date"
                             value={endDate}
@@ -144,50 +159,50 @@ export default function Dashboard() {
                     </div>
 
                     <button className="primary-button" onClick={handleFetchData} disabled={loading}>
-                        {loading ? 'Načítám data...' : 'Analyzovat'}
+                        {loading ? t('dashboard.loadingBtn') : t('dashboard.analyzeBtn')}
                     </button>
 
-                    <button className="save-button" onClick={saveSettings}>Uložit měny</button>
+                    <button className="save-button" onClick={saveSettings}>{t('dashboard.saveBtn')}</button>
                 </aside>
 
                 <main className="results-area">
                     {error && (
                         <div className="error-banner">
-                            <span><strong>Chyba:</strong> {error}</span>
+                            <span><strong>{t('dashboard.errorText')}</strong> {error}</span>
                             <button onClick={() => setError(null)}>X</button>
                         </div>
                     )}
 
-                    {loading && <div className="loading-overlay">Získávám data z burzy...</div>}
+                    {loading && <div className="loading-overlay">{t('results.fetching')}</div>}
 
                     {dashboardData ? (
                         <>
                             <div className="stats-cards">
                                 <div className="card">
-                                    <h4>Nejsilnější měna</h4>
-                                    {dashboardData.extremes.strongestCurrency ? (
-                                        <div className="stat-highlight">
-                                            <span>{dashboardData.extremes.strongestCurrency}</span>
-                                            <strong>{dashboardData.extremes.strongestValue.toFixed(4)}</strong>
-                                        </div>
-                                    ) : (
-                                        <p className="no-data-text">Žádná data</p>
-                                    )}
-                                </div>
-                                <div className="card">
-                                    <h4>Nejslabší měna</h4>
+                                    <h4>{t('results.strongest')}</h4>
                                     {dashboardData.extremes.weakestCurrency ? (
                                         <div className="stat-highlight">
                                             <span>{dashboardData.extremes.weakestCurrency}</span>
                                             <strong>{dashboardData.extremes.weakestValue.toFixed(4)}</strong>
                                         </div>
                                     ) : (
-                                        <p className="no-data-text">Žádná data</p>
+                                        <p className="no-data-text">{t('results.noData')}</p>
+                                    )}
+                                </div>
+                                <div className="card">
+                                    <h4>{t('results.weakest')}</h4>
+                                    {dashboardData.extremes.strongestCurrency ? (
+                                        <div className="stat-highlight">
+                                            <span>{dashboardData.extremes.strongestCurrency}</span>
+                                            <strong>{dashboardData.extremes.strongestValue.toFixed(4)}</strong>
+                                        </div>
+                                    ) : (
+                                        <p className="no-data-text">{t('results.noData')}</p>
                                     )}
                                 </div>
 
                                 <div className="card">
-                                    <h4>Průměr za období</h4>
+                                    <h4>{t('results.average')}</h4>
                                     {hasAverages ? (
                                         <ul className="averages-list">
                                             {Object.entries(dashboardData.averages).map(([currency, value]) => (
@@ -195,15 +210,13 @@ export default function Dashboard() {
                                             ))}
                                         </ul>
                                     ) : (
-                                        <p className="no-data-text">
-                                            Pro zvolené období a měny nejsou data pro výpočet průměru.
-                                        </p>
+                                        <p className="no-data-text">{t('results.noDataAverages')}</p>
                                     )}
                                 </div>
                             </div>
 
                             <div className="chart-placeholder">
-                                <h3>Vývoj kurzů v čase</h3>
+                                <h3>{t('results.chartTitle')}</h3>
                                 {hasChartData ? (
                                     <ResponsiveContainer width="100%" height="85%">
                                         <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -230,13 +243,13 @@ export default function Dashboard() {
                                     </ResponsiveContainer>
                                 ) : (
                                     <div className="chart-empty-message">
-                                        Pro vybrané období a měny nejsou k dispozici žádná historická data.
+                                        {t('results.noDataChart')}
                                     </div>
                                 )}
                             </div>
                         </>
                     ) : (
-                        !error && !loading && <div className="empty-state-message">Zvolte parametry a klikněte na "Analyzovat" pro zobrazení dat.</div>
+                        !error && !loading && <div className="empty-state-message">{t('results.selectParams')}</div>
                     )}
                 </main>
             </div>

@@ -31,7 +31,7 @@ public class SettingsService {
             try {
                 return objectMapper.readValue(file, UserSettings.class);
             } catch (IOException e) {
-                log.error("Nepodařilo se přečíst soubor s nastavením. Použijí se výchozí hodnoty.", e);
+                log.error("Failed to read settings file. Using default values.", e);
             }
         }
         return new UserSettings();
@@ -47,23 +47,23 @@ public class SettingsService {
             }
 
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(new File(settingsFilePath), settings);
-            log.info("Uživatelské nastavení bylo úspěšně uloženo do: {}", settingsFilePath);
+            log.info("User settings successfully saved to: {}", settingsFilePath);
 
         } catch (IOException e) {
-            log.error("Chyba při ukládání uživatelského nastavení na disk: {}", e.getMessage());
-            throw new StorageException("Nepodařilo se uložit nastavení na disk.", e);
+            log.error("Error saving user settings to disk: {}", e.getMessage());
+            throw new StorageException("Failed to save settings to disk.", e);
         }
     }
 
     private void validateSettings(UserSettings settings) {
         if (!CurrencySymbol.isValid(settings.getBaseCurrency())) {
-            throw new IllegalArgumentException("Nepodporovaná základní měna: " + settings.getBaseCurrency());
+            throw new IllegalArgumentException("error.currency.unsupportedBase");
         }
 
         if (settings.getSelectedCurrencies() != null) {
             for (String currency : settings.getSelectedCurrencies()) {
                 if (!CurrencySymbol.isValid(currency)) {
-                    throw new IllegalArgumentException("Nepodporovaná měna v seznamu: " + currency);
+                    throw new IllegalArgumentException("error.currency.unsupportedTarget");
                 }
             }
         }

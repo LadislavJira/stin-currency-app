@@ -10,6 +10,7 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
+    config.headers['Accept-Language'] = localStorage.getItem('appLang') || 'cs';
     const token = localStorage.getItem('authToken');
     if (token && !config.headers.Authorization) {
         config.headers.Authorization = `Basic ${token}`;

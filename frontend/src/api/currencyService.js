@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+import i18n from '../i18n';
 
 export const currencyService = {
     getAvailableSymbols: async () => {
@@ -7,7 +8,7 @@ export const currencyService = {
             return response.data;
         } catch (error) {
             console.error('Chyba při načítání měn:', error);
-            throw new Error('Nepodařilo se načíst seznam dostupných měn.');
+            throw new Error(i18n.t('api.errorSymbols'));
         }
     },
 
@@ -30,16 +31,17 @@ export const currencyService = {
             if (error.response && error.response.data && error.response.data.message) {
                 throw new Error(error.response.data.message);
             }
-            throw new Error('Nepodařilo se stáhnout data z burzy. Zkuste to prosím později.');
+            throw new Error(i18n.t('api.errorDashboard'));
         }
     },
+
     getSettings: async () => {
         try {
             const response = await apiClient.get('/api/settings');
             return response.data;
         } catch (error) {
             console.error('Chyba při načítání nastavení:', error);
-            throw new Error('Nepodařilo se načíst uživatelské nastavení.');
+            throw new Error(i18n.t('api.errorSettingsLoad'));
         }
     },
 
@@ -49,7 +51,7 @@ export const currencyService = {
             return response.data;
         } catch (error) {
             console.error('Chyba při ukládání nastavení:', error);
-            throw new Error('Nepodařilo se uložit nastavení na server.');
+            throw new Error(i18n.t('api.errorSettingsSave'));
         }
     }
 };
