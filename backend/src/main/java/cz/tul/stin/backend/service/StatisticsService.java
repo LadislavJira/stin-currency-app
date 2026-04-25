@@ -4,16 +4,18 @@ import cz.tul.stin.backend.client.ExchangeRateClient;
 import cz.tul.stin.backend.exception.ExternalApiException;
 import cz.tul.stin.backend.model.CurrencySymbol;
 import cz.tul.stin.backend.model.ExchangeRate;
-import cz.tul.stin.backend.model.dto.DashboardResponse;
 import cz.tul.stin.backend.model.dto.ExtremesResult;
+import cz.tul.stin.backend.model.dto.HistoryResponse;
 import cz.tul.stin.backend.model.dto.LiveRatesResponse;
 import cz.tul.stin.backend.model.dto.TimeframeResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Service
@@ -23,42 +25,16 @@ public class StatisticsService {
 
     private final ExchangeRateClient exchangeRateClient;
 
-    public DashboardResponse getDashboardData(String base, String symbols, String startDate, String endDate) {
-        log.info("Zahajuji přípravu dat pro Dashboard. Base: {}, Sledované měny: {}, Období: {} až {}", base, symbols, startDate, endDate);
+    @Cacheable(value = "latestRates", key = "#base + '-' + #symbols")
+    public ExtremesResult getExtremes(String base, String symbols) {
+        log.info("Fetching latest rates to calculate extremes. Base: {}, Symbols: {}", base, symbols);
+        validateCurrencies(base, symbols);
 
-        validateInputs(base, symbols, startDate, endDate);
-        List<String> requestedSymbols = parseSymbols(symbols);
-
-        ExtremesResult extremes = this.findExtremes(base, symbols);
-
-        log.info("Stahuji historická data z API pro výpočet průměrů a grafu");
-        TimeframeResponse response = exchangeRateClient.getHistoricalRates(startDate, endDate, base, symbols);
-
-        if (response == null || !response.isSuccess() || response.getQuotes() == null) {
-            log.error("Externí API nevrátilo platná historická data pro období {} až {}", startDate, endDate);
-            throw new ExternalApiException("Nepodařilo se získat historická data.");
-        }
-
-        List<ExchangeRate> domainRates = mapTimeframeToDomain(response, requestedSymbols, startDate, endDate);
-
-        Map<String, Double> averages = calculateAverages(domainRates);
-        Map<String, Map<String, Double>> timeseries = buildTimeseries(response, requestedSymbols, startDate, endDate);
-
-        log.info("Dashboard data úspěšně zpracována a odesílána.");
-        return DashboardResponse.builder()
-                .extremes(extremes)
-                .averages(averages)
-                .timeseries(timeseries)
-                .build();
-    }
-
-    public ExtremesResult findExtremes(String base, String symbols) {
-        log.info("Zjišťuji aktuální kurzy pro výpočet extrémů");
         LiveRatesResponse response = exchangeRateClient.getLatestRates(base, symbols);
 
         if (response == null || !response.isSuccess() || response.getQuotes() == null) {
-            log.error("Externí API nevrátilo platná aktuální data pro base={}", base);
-            throw new ExternalApiException("Nepodařilo se získat data pro výpočet extrémů.");
+            log.error("External API did not return valid latest data for base={}", base);
+            throw new ExternalApiException("error.api.connection");
         }
 
         List<String> requestedSymbols = parseSymbols(symbols);
@@ -83,34 +59,63 @@ public class StatisticsService {
             }
         }
 
-        log.info("Extrémy vypočítány - Nejsilnější: {} ({}), Nejslabší: {} ({})", strongestCurr, strongestVal, weakestCurr, weakestVal);
+        log.info("Extremes calculated - Strongest: {} ({}), Weakest: {} ({})", strongestCurr, strongestVal, weakestCurr, weakestVal);
         return new ExtremesResult(strongestCurr, strongestVal, weakestCurr, weakestVal);
     }
 
+    public HistoryResponse getHistory(String base, String symbols, String startDate, String endDate) {
+        log.info("Fetching historical data. Base: {}, Symbols: {}, Period: {} to {}", base, symbols, startDate, endDate);
+        validateDates(startDate, endDate);
+        validateCurrencies(base, symbols);
 
-    private void validateInputs(String base, String symbols, String startDate, String endDate) {
+        List<String> requestedSymbols = parseSymbols(symbols);
+        TimeframeResponse response = exchangeRateClient.getHistoricalRates(startDate, endDate, base, symbols);
+
+        if (response == null || !response.isSuccess() || response.getQuotes() == null) {
+            log.error("External API did not return valid historical data for period {} to {}", startDate, endDate);
+            throw new ExternalApiException("error.api.connection");
+        }
+
+        List<ExchangeRate> domainRates = mapTimeframeToDomain(response, requestedSymbols, startDate, endDate);
+
+        Map<String, Double> averages = calculateAverages(domainRates);
+        Map<String, Map<String, Double>> timeseries = buildTimeseries(response, requestedSymbols, startDate, endDate);
+
+        log.info("History data successfully processed.");
+        return HistoryResponse.builder()
+                .averages(averages)
+                .timeseries(timeseries)
+                .build();
+    }
+
+    private void validateCurrencies(String base, String symbols) {
+        if (symbols == null || symbols.trim().isEmpty()) {
+            throw new IllegalArgumentException("error.currency.empty");
+        }
+        if (!CurrencySymbol.isValid(base)) {
+            throw new IllegalArgumentException("error.currency.invalid");
+        }
+        for (String symbol : parseSymbols(symbols)) {
+            if (!CurrencySymbol.isValid(symbol)) {
+                throw new IllegalArgumentException("error.currency.invalid");
+            }
+        }
+    }
+
+    private void validateDates(String startDate, String endDate) {
         try {
             LocalDate start = LocalDate.parse(startDate);
             LocalDate end = LocalDate.parse(endDate);
             if (start.isAfter(end)) {
-                log.error("Chyba validace: Počáteční datum {} je po koncovém {}", startDate, endDate);
-                throw new IllegalArgumentException("Počáteční datum nemůže být po koncovém datu.");
+                throw new IllegalArgumentException("error.date.invalid");
+            }
+            long daysBetween = ChronoUnit.DAYS.between(start, end);
+            if (daysBetween > 365) {
+                log.warn("Validation error: Date range is too long ({} days). Max is 365.", daysBetween);
+                throw new IllegalArgumentException("error.date.tooLong");
             }
         } catch (DateTimeParseException e) {
-            log.error("Chyba validace: Neplatný formát data", e);
-            throw new IllegalArgumentException("Neplatný formát data. Použijte YYYY-MM-DD.");
-        }
-
-        if (!CurrencySymbol.isValid(base)) {
-            log.error("Chyba validace: Neplatná základní měna '{}'", base);
-            throw new IllegalArgumentException("Neplatná základní měna: " + base);
-        }
-
-        for (String symbol : parseSymbols(symbols)) {
-            if (!CurrencySymbol.isValid(symbol)) {
-                log.error("Chyba validace: Neplatná sledovaná měna '{}'", symbol);
-                throw new IllegalArgumentException("Neplatná sledovaná měna: " + symbol);
-            }
+            throw new IllegalArgumentException("error.date.format");
         }
     }
 

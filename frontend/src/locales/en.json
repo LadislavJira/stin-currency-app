@@ -1,0 +1,47 @@
+{
+  "dashboard": {
+    "headerTitle": "Currency Analyser",
+    "user": "User:",
+    "logout": "Logout",
+    "settingsTitle": "Analysis Settings",
+    "baseCurrency": "Base Currency",
+    "targetCurrencies": "Tracked Currencies",
+    "dateFrom": "Date From",
+    "dateTo": "Date To",
+    "analyzeBtn": "Analyze",
+    "loadingBtn": "Loading data...",
+    "saveBtn": "Save Currencies",
+    "errorText": "Error:",
+    "noCurrencyError": "Select at least one tracked currency."
+  },
+  "results": {
+    "strongest": "Strongest Currency",
+    "weakest": "Weakest Currency",
+    "average": "Average for Period",
+    "chartTitle": "Exchange Rate Trends",
+    "noData": "No Data",
+    "noDataAverages": "No average data available for the selected period and currencies.",
+    "noDataChart": "No historical data available for the selected period and currencies.",
+    "selectParams": "Select parameters and click \"Analyze\" to view data.",
+    "fetching": "Fetching data from exchange..."
+  },
+  "login": {
+    "title": "Login",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Sign In",
+    "errorServer": "Server is not responding. Ensure the backend is running.",
+    "errorAuth": "Invalid username or password.",
+    "errorGeneric": "Something went wrong. Please try again later."
+  },
+  "api": {
+    "errorSymbols": "Failed to load available currencies.",
+    "errorDashboard": "Failed to download exchange data. Please try again later.",
+    "errorSettingsLoad": "Failed to load user settings.",
+    "errorSettingsSave": "Failed to save settings to the server.",
+    "error.date.tooLong": "The selected period is too long. The maximum range is 365 days.",
+    "error.date.invalid": "The start date must be before the end date.",
+    "error.date.format": "Invalid date format.",
+    "error.message.internalServerError": "An unexpected internal server error occurred."
+  }
+}

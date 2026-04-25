@@ -52,7 +52,7 @@ class MockExchangeRateClientTest {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             brokenClient.getLatestRates("EUR", "CZK");
         });
-        assertTrue(exception.getMessage().contains("Chyba při načítání"));
+        assertTrue(exception.getMessage().contains("Error loading mock data for latest rates"));
     }
 
     @Test
@@ -67,7 +67,7 @@ class MockExchangeRateClientTest {
             brokenClient.getHistoricalRates("2025-01-01", "2025-01-03", "EUR", "CZK");
         });
 
-        assertTrue(exception.getMessage().contains("Chyba při načítání mock dat pro historii"),
+        assertTrue(exception.getMessage().contains("Error loading mock data for historical rates"),
                 "Zpráva výjimky musí obsahovat text z catch bloku");
     }
 }

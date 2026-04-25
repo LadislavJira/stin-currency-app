@@ -8,6 +8,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -18,6 +19,9 @@ class SettingsControllerTest {
 
     @Mock
     private SettingsService settingsService;
+
+    @Mock
+    private MessageSource messageSource;
 
     @InjectMocks
     private SettingsController settingsController;
@@ -36,6 +40,9 @@ class SettingsControllerTest {
     @Test
     void testSaveSettings() {
         UserSettings newSettings = new UserSettings();
+
+        Mockito.when(messageSource.getMessage(Mockito.eq("success.settings.saved"), Mockito.any(), Mockito.any()))
+                .thenReturn("Nastavení bylo úspěšně uloženo.");
 
         ResponseEntity<String> response = settingsController.saveSettings(newSettings);
 

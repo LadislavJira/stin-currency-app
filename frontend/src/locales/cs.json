@@ -1,0 +1,47 @@
+{
+  "dashboard": {
+    "headerTitle": "Currency Analyser",
+    "user": "Uživatel:",
+    "logout": "Odhlásit",
+    "settingsTitle": "Nastavení analýzy",
+    "baseCurrency": "Základní měna (Base)",
+    "targetCurrencies": "Sledované měny",
+    "dateFrom": "Období od",
+    "dateTo": "Období do",
+    "analyzeBtn": "Analyzovat",
+    "loadingBtn": "Načítám data...",
+    "saveBtn": "Uložit měny",
+    "errorText": "Chyba:",
+    "noCurrencyError": "Vyberte alespoň jednu sledovanou měnu."
+  },
+  "results": {
+    "strongest": "Nejsilnější měna",
+    "weakest": "Nejslabší měna",
+    "average": "Průměr za období",
+    "chartTitle": "Vývoj kurzů v čase",
+    "noData": "Žádná data",
+    "noDataAverages": "Pro zvolené období a měny nejsou data pro výpočet průměru.",
+    "noDataChart": "Pro vybrané období a měny nejsou k dispozici žádná historická data.",
+    "selectParams": "Zvolte parametry a klikněte na \"Analyzovat\" pro zobrazení dat.",
+    "fetching": "Získávám data z burzy..."
+  },
+  "login": {
+    "title": "Přihlášení",
+    "username": "Uživatelské jméno",
+    "password": "Heslo",
+    "submit": "Přihlásit se",
+    "errorServer": "Server neodpovídá. Ujistěte se, že běží backend.",
+    "errorAuth": "Nesprávné uživatelské jméno nebo heslo.",
+    "errorGeneric": "Něco se pokazilo. Zkuste to prosím později."
+  },
+  "api": {
+    "errorSymbols": "Nepodařilo se načíst seznam dostupných měn.",
+    "errorDashboard": "Nepodařilo se stáhnout data z burzy. Zkuste to prosím později.",
+    "errorSettingsLoad": "Nepodařilo se načíst uživatelské nastavení.",
+    "errorSettingsSave": "Nepodařilo se uložit nastavení na server.",
+    "error.date.tooLong": "Zvolené období je příliš dlouhé. Maximální rozsah je 365 dní.",
+    "error.date.invalid": "Datum od musí být před datem do.",
+    "error.date.format": "Neplatný formát data.",
+    "error.message.internalServerError": "Došlo k neočekávané chybě na serveru."
+  }
+}
