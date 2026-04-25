@@ -11,25 +11,44 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const today = new Date().toISOString().split('T')[0];
 
+
+
     const [baseCurrency, setBaseCurrency] = useState('EUR');
     const [selectedCurrencies, setSelectedCurrencies] = useState([]);
     const [startDate, setStartDate] = useState('2026-04-01');
     const [endDate, setEndDate] = useState(today);
     const [availableCurrencies, setAvailableCurrencies] = useState([]);
-    const [loading, setLoading] = useState(false);
+
     const [error, setError] = useState(null);
-    const [dashboardData, setDashboardData] = useState(null);
+
+    const [isFetching, setIsFetching] = useState(false);
+    const [loadingExtremes, setLoadingExtremes] = useState(false);
+    const [loadingHistory, setLoadingHistory] = useState(false);
+
+    const [extremesData, setExtremesData] = useState(null);
+    const [historyData, setHistoryData] = useState(null);
 
     const { t, i18n } = useTranslation();
 
-    const chartData = dashboardData && dashboardData.timeseries
-        ? Object.entries(dashboardData.timeseries).map(([date, rates]) => ({
+    const calculateDateOffset = (dateString, daysOffset) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        date.setDate(date.getDate() + daysOffset);
+        return date.toISOString().split('T')[0];
+    };
+
+    const maxEndDateByStart = calculateDateOffset(startDate, 365);
+    const actualMaxEndDate = maxEndDateByStart < today ? maxEndDateByStart : today;
+    const minStartDateByEnd = calculateDateOffset(endDate, -365);
+
+    const chartData = historyData && historyData.timeseries
+        ? Object.entries(historyData.timeseries).map(([date, rates]) => ({
             date,
             ...rates
         }))
         : [];
 
-    const hasAverages = dashboardData && Object.keys(dashboardData.averages).length > 0;
+    const hasAverages = historyData && Object.keys(historyData.averages).length > 0;
     const hasChartData = chartData.length > 0;
 
     useEffect(() => {
@@ -69,7 +88,6 @@ export default function Dashboard() {
                 selectedCurrencies: selectedCurrencies
             };
             const responseMessage = await currencyService.saveSettings(payload);
-            // Zde by šlo přeložit i "Nastavení uloženo", ale protože to vrací backend jako responseMessage, necháme to tak.
             alert(responseMessage);
         } catch (err) {
             setError(err.message);
@@ -82,16 +100,39 @@ export default function Dashboard() {
             return;
         }
 
-        setLoading(true);
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 365) {
+            setError(t('error.date.tooLong'));
+            return;
+        }
+        setIsFetching(true);
         setError(null);
+        setExtremesData(null);
+        setHistoryData(null);
+
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
         try {
-            const data = await currencyService.getDashboardData(baseCurrency, selectedCurrencies, startDate, endDate);
-            setDashboardData(data);
+            setLoadingExtremes(true);
+            const extremes = await currencyService.getExtremes(baseCurrency, selectedCurrencies);
+            setExtremesData(extremes);
+            setLoadingExtremes(false);
+            await delay(1200);
+
+            setLoadingHistory(true);
+            const history = await currencyService.getHistory(baseCurrency, selectedCurrencies, startDate, endDate);
+            setHistoryData(history);
+            setLoadingHistory(false);
+
         } catch (err) {
             setError(err.message);
+            setLoadingExtremes(false);
+            setLoadingHistory(false);
         } finally {
-            setLoading(false);
+            setIsFetching(false);
         }
     };
 
@@ -146,20 +187,21 @@ export default function Dashboard() {
                             type="date"
                             value={startDate}
                             max={endDate}
+                            min={minStartDateByEnd}
                             onChange={(e) => setStartDate(e.target.value)}
                         />
                         <label>{t('dashboard.dateTo')}</label>
                         <input
                             type="date"
                             value={endDate}
-                            max={today}
+                            max={actualMaxEndDate}
                             min={startDate}
                             onChange={(e) => setEndDate(e.target.value)}
                         />
                     </div>
 
-                    <button className="primary-button" onClick={handleFetchData} disabled={loading}>
-                        {loading ? t('dashboard.loadingBtn') : t('dashboard.analyzeBtn')}
+                    <button className="primary-button" onClick={handleFetchData} disabled={isFetching}>
+                        {isFetching ? t('dashboard.loadingBtn') : t('dashboard.analyzeBtn')}
                     </button>
 
                     <button className="save-button" onClick={saveSettings}>{t('dashboard.saveBtn')}</button>
@@ -173,17 +215,17 @@ export default function Dashboard() {
                         </div>
                     )}
 
-                    {loading && <div className="loading-overlay">{t('results.fetching')}</div>}
-
-                    {dashboardData ? (
+                    {(extremesData || historyData || isFetching) ? (
                         <>
                             <div className="stats-cards">
                                 <div className="card">
                                     <h4>{t('results.strongest')}</h4>
-                                    {dashboardData.extremes.weakestCurrency ? (
+                                    {loadingExtremes ? (
+                                        <div className="loading-mini">{t('results.fetching')}</div>
+                                    ) : extremesData?.weakestCurrency ? (
                                         <div className="stat-highlight">
-                                            <span>{dashboardData.extremes.weakestCurrency}</span>
-                                            <strong>{dashboardData.extremes.weakestValue.toFixed(4)}</strong>
+                                            <span>{extremesData.weakestCurrency}</span>
+                                            <strong>{extremesData.weakestValue.toFixed(4)}</strong>
                                         </div>
                                     ) : (
                                         <p className="no-data-text">{t('results.noData')}</p>
@@ -191,10 +233,12 @@ export default function Dashboard() {
                                 </div>
                                 <div className="card">
                                     <h4>{t('results.weakest')}</h4>
-                                    {dashboardData.extremes.strongestCurrency ? (
+                                    {loadingExtremes ? (
+                                        <div className="loading-mini">{t('results.fetching')}</div>
+                                    ) : extremesData?.strongestCurrency ? (
                                         <div className="stat-highlight">
-                                            <span>{dashboardData.extremes.strongestCurrency}</span>
-                                            <strong>{dashboardData.extremes.strongestValue.toFixed(4)}</strong>
+                                            <span>{extremesData.strongestCurrency}</span>
+                                            <strong>{extremesData.strongestValue.toFixed(4)}</strong>
                                         </div>
                                     ) : (
                                         <p className="no-data-text">{t('results.noData')}</p>
@@ -203,9 +247,11 @@ export default function Dashboard() {
 
                                 <div className="card">
                                     <h4>{t('results.average')}</h4>
-                                    {hasAverages ? (
+                                    {loadingHistory ? (
+                                        <div className="loading-mini">{t('results.fetching')}</div>
+                                    ) : hasAverages ? (
                                         <ul className="averages-list">
-                                            {Object.entries(dashboardData.averages).map(([currency, value]) => (
+                                            {Object.entries(historyData.averages).map(([currency, value]) => (
                                                 <li key={currency}><span>{currency}:</span> <strong>{value.toFixed(4)}</strong></li>
                                             ))}
                                         </ul>
@@ -217,7 +263,9 @@ export default function Dashboard() {
 
                             <div className="chart-placeholder">
                                 <h3>{t('results.chartTitle')}</h3>
-                                {hasChartData ? (
+                                {loadingHistory ? (
+                                    <div className="loading-overlay">{t('results.fetching')}</div>
+                                ) : hasChartData ? (
                                     <ResponsiveContainer width="100%" height="85%">
                                         <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
@@ -227,7 +275,7 @@ export default function Dashboard() {
                                             <Legend wrapperStyle={{ paddingTop: '10px' }} />
 
                                             {selectedCurrencies.map((currency, index) => (
-                                                Object.keys(dashboardData.averages).includes(currency) && (
+                                                Object.keys(historyData.averages).includes(currency) && (
                                                     <Line
                                                         key={currency}
                                                         type="monotone"
@@ -249,7 +297,7 @@ export default function Dashboard() {
                             </div>
                         </>
                     ) : (
-                        !error && !loading && <div className="empty-state-message">{t('results.selectParams')}</div>
+                        !error && !isFetching && <div className="empty-state-message">{t('results.selectParams')}</div>
                     )}
                 </main>
             </div>

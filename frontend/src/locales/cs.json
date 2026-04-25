@@ -38,6 +38,10 @@
     "errorSymbols": "Nepodařilo se načíst seznam dostupných měn.",
     "errorDashboard": "Nepodařilo se stáhnout data z burzy. Zkuste to prosím později.",
     "errorSettingsLoad": "Nepodařilo se načíst uživatelské nastavení.",
-    "errorSettingsSave": "Nepodařilo se uložit nastavení na server."
+    "errorSettingsSave": "Nepodařilo se uložit nastavení na server.",
+    "error.date.tooLong": "Zvolené období je příliš dlouhé. Maximální rozsah je 365 dní.",
+    "error.date.invalid": "Datum od musí být před datem do.",
+    "error.date.format": "Neplatný formát data.",
+    "error.message.internalServerError": "Došlo k neočekávané chybě na serveru."
   }
 }

@@ -12,11 +12,31 @@ export const currencyService = {
         }
     },
 
-    getDashboardData: async (base, symbols, startDate, endDate) => {
+    getExtremes: async (base, symbols) => {
         try {
             const symbolsParam = Array.isArray(symbols) ? symbols.join(',') : symbols;
 
-            const response = await apiClient.get('/api/currencies/dashboard', {
+            const response = await apiClient.get('/api/currencies/extremes', {
+                params: {
+                    base: base,
+                    symbols: symbolsParam
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Chyba při načítání extrémů:', error);
+            if (error.response && error.response.data && error.response.data.message) {
+                throw new Error(error.response.data.message);
+            }
+            throw new Error(i18n.t('api.errorDashboard'));
+        }
+    },
+
+    getHistory: async (base, symbols, startDate, endDate) => {
+        try {
+            const symbolsParam = Array.isArray(symbols) ? symbols.join(',') : symbols;
+
+            const response = await apiClient.get('/api/currencies/history', {
                 params: {
                     base: base,
                     symbols: symbolsParam,
@@ -26,10 +46,9 @@ export const currencyService = {
             });
             return response.data;
         } catch (error) {
-            console.error('Chyba při načítání dat pro dashboard:', error);
-
+            console.error('Chyba při načítání historie:', error);
             if (error.response && error.response.data && error.response.data.message) {
-                throw new Error(error.response.data.message);
+                throw new Error(i18n.t(error.response.data.message, { defaultValue: error.response.data.message }));
             }
             throw new Error(i18n.t('api.errorDashboard'));
         }
