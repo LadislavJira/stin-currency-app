@@ -6,10 +6,7 @@ import java.util.Map;
 
 @Data
 @Builder
-public class DashboardResponse {
-    private ExtremesResult extremes;
-
+public class HistoryResponse {
     private Map<String, Double> averages;
-
     private Map<String, Map<String, Double>> timeseries;
 }

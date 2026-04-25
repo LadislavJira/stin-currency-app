@@ -38,6 +38,10 @@
     "errorSymbols": "Failed to load available currencies.",
     "errorDashboard": "Failed to download exchange data. Please try again later.",
     "errorSettingsLoad": "Failed to load user settings.",
-    "errorSettingsSave": "Failed to save settings to the server."
+    "errorSettingsSave": "Failed to save settings to the server.",
+    "error.date.tooLong": "The selected period is too long. The maximum range is 365 days.",
+    "error.date.invalid": "The start date must be before the end date.",
+    "error.date.format": "Invalid date format.",
+    "error.message.internalServerError": "An unexpected internal server error occurred."
   }
 }
