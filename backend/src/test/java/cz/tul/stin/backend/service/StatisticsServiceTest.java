@@ -165,7 +165,7 @@ class StatisticsServiceTest {
        assertEquals(25.167, averages.get("CZK"), "Průměr CZK musí být správně zaokrouhlen na 3 desetinná místa");
         assertEquals(1.0, averages.get("USD"));
     }
-   
+
     @Test
     void getHistory_ThrowsException_WhenApiFails_Branches() {
         TimeframeResponse failResponse = new TimeframeResponse();
@@ -185,7 +185,7 @@ class StatisticsServiceTest {
     @Test
     void getHistory_Success_CoversBuildTimeseriesBranches() {
         Map<String, Double> dailyQuotes = new HashMap<>();
-        dailyQuotes.put(null, 1.0);
+        dailyQuotes.put(null, 1.0);           
         dailyQuotes.put("SHORT", 2.0);
         dailyQuotes.put("EURGBP", 3.0);
         dailyQuotes.put("EURCZK", 25.0);
@@ -201,7 +201,7 @@ class StatisticsServiceTest {
                 .thenReturn(timeframeResponse);
 
         HistoryResponse result = statisticsService.getHistory("EUR", "CZK", "2026-04-01", "2026-04-02");
-
+        
         assertTrue(result.getTimeseries().get("2026-04-01").containsKey("CZK"));
         assertFalse(result.getTimeseries().get("2026-04-01").containsKey("GBP"), "GBP nebylo vyžádáno, nesmí tam být");
     }
@@ -209,11 +209,11 @@ class StatisticsServiceTest {
     @Test
     void parseSymbols_ReturnsEmptyList_ForNullOrEmpty() throws Exception {
         java.lang.reflect.Method method = StatisticsService.class.getDeclaredMethod("parseSymbols", String.class);
-        method.setAccessible(true);
+        method.setAccessible(true); 
         @SuppressWarnings("unchecked")
         java.util.List<String> resultNull = (java.util.List<String>) method.invoke(statisticsService, (String) null);
         assertTrue(resultNull.isEmpty(), "Mělo by vrátit prázdný list, pokud je vstup null");
-
+        
         @SuppressWarnings("unchecked")
         java.util.List<String> resultEmpty = (java.util.List<String>) method.invoke(statisticsService, "");
         assertTrue(resultEmpty.isEmpty(), "Mělo by vrátit prázdný list, pokud je vstup prázdný");
